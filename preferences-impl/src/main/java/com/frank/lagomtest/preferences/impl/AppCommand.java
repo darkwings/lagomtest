@@ -4,12 +4,15 @@ import akka.Done;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.frank.lagomtest.preferences.api.App;
+import com.frank.lagomtest.preferences.api.AppStatus;
 import com.google.common.base.Preconditions;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import com.lightbend.lagom.serialization.CompressedJsonable;
 import com.lightbend.lagom.serialization.Jsonable;
 
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
+import java.util.Optional;
 
 /**
  * @author ftorriani
@@ -90,6 +93,68 @@ public interface AppCommand extends Jsonable {
         @Override
         public int hashCode() {
             return appId != null ? appId.hashCode() : 0;
+        }
+    }
+
+    @SuppressWarnings("serial")
+    @Immutable
+    @JsonDeserialize
+    class GetApp implements AppCommand, CompressedJsonable,
+            PersistentEntity.ReplyType<GetAppReply> {
+
+        @Override
+        public boolean equals(@Nullable Object another) {
+            return this instanceof GetApp;
+        }
+
+        @Override
+        public int hashCode() {
+            return 2053226012;
+        }
+    }
+
+    @SuppressWarnings("serial")
+    @Immutable
+    @JsonDeserialize
+    class GetAppReply implements Jsonable {
+        final Optional<App> app;
+        final AppStatus status;
+
+        public GetAppReply( Optional<App> app, AppStatus status ) {
+            this.app = app;
+            this.status = status == null ? AppStatus.DRAFT : status;
+        }
+
+        public Optional<App> getApp() {
+            return app;
+        }
+
+        public AppStatus getStatus() {
+            return status;
+        }
+
+        @Override
+        public boolean equals( Object o ) {
+            if ( this == o ) {
+                return true;
+            }
+            if ( o == null || getClass() != o.getClass() ) {
+                return false;
+            }
+
+            GetAppReply reply = (GetAppReply) o;
+
+            if ( app != null ? !app.equals( reply.app ) : reply.app != null ) {
+                return false;
+            }
+            return status == reply.status;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = app != null ? app.hashCode() : 0;
+            result = 31 * result + ( status != null ? status.hashCode() : 0 );
+            return result;
         }
     }
 

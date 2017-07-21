@@ -2,10 +2,12 @@ package com.frank.lagomtest.preferences.impl;
 
 import akka.NotUsed;
 import com.frank.lagomtest.preferences.api.App;
-import com.frank.lagomtest.preferences.api.AppResult;
+import com.frank.lagomtest.preferences.api.AppDetails;
+import com.frank.lagomtest.preferences.api.CreateAppResult;
 import com.frank.lagomtest.preferences.api.PreferencesService;
 import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
+import com.lightbend.lagom.javadsl.api.transport.NotFound;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRef;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRegistry;
 
@@ -32,13 +34,29 @@ public class PreferencesServiceImpl implements PreferencesService {
     }
 
     @Override
-    public ServiceCall<App, AppResult> newApp( String appId ) {
-        return app ->
+    public ServiceCall<App, CreateAppResult> createApp( String appId ) {
+        return request ->
                 persistentEntities.refFor( AppEntity.class, appId ).
-                    ask( new CreateApp( app ) ).
-                    thenApply( createAppDone ->
-                            new AppResult( ( (AppCommand.CreateAppDone) createAppDone ).getAppId() ) );
+                        ask( new CreateApp( request ) ).
+                        thenApply( createAppDone ->
+                                new CreateAppResult( ( (AppCommand.CreateAppDone) createAppDone ).getAppId() ) );
     }
+
+    @Override
+    public ServiceCall<NotUsed, AppDetails> getApp( String appId ) {
+        return request -> persistentEntities.refFor( AppEntity.class, appId ).
+                ask( new AppCommand.GetApp() ).
+                thenApply( r -> {
+                    AppCommand.GetAppReply reply = (AppCommand.GetAppReply) r;
+                    if ( reply.getApp().isPresent() && !reply.getApp().get().isEmpty() ) {
+                        return new AppDetails( appId, reply.getApp().get(), reply.getStatus() );
+                    }
+                    else {
+                        throw new NotFound( "app " + appId + " not found" );
+                    }
+                } );
+    }
+
 
     /**
      * Permette di ottenere il riferimento ad una entity

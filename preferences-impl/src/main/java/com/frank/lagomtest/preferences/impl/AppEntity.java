@@ -2,6 +2,7 @@ package com.frank.lagomtest.preferences.impl;
 
 import akka.Done;
 import com.frank.lagomtest.preferences.api.App;
+import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.impl.AppCommand.*;
 import com.frank.lagomtest.preferences.impl.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
@@ -21,8 +22,8 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         if ( snapshot.isPresent() ) {
             AppState state = snapshot.get();
             switch ( state.status ) {
-                case NOT_STARTED:
-                    b = notStarted( state );
+                case DRAFT:
+                    b = draft( state );
                     break;
                 case ACTIVE:
                     b = active( state );
@@ -38,98 +39,123 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
             }
         }
         else {
-            b = notStarted( AppState.builder().
-                    app( App.builder().
-                            creatorId( "" ).
-                            uniqueId( "" ).
-                            build() ).
+            b = draft( AppState.builder().
+                    app( App.builder().empty().build() ).
                     build() );
         }
 
         return b;
     }
 
-    private Behavior notStarted( AppState state ) {
+    private Behavior draft( AppState state ) {
 
-        System.out.println( "===== NOT STARTED =====" );
+        System.out.println( "===== DRAFT =====" );
 
-        BehaviorBuilder b = newBehaviorBuilder( state );
+        BehaviorBuilder builder = newBehaviorBuilder( state );
+        addAppCreatedHandler( builder );
+        addGetAppHandler( builder );
 
-        b.setReadOnlyCommandHandler( DeactivateApp.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( DeactivateApp.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
+        builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
+                persistAndDone( ctx, new AppActivated( cmd.appId ) ) );
 
-        b.setCommandHandler( CreateApp.class, ( start, ctx ) -> {
-            AppCreated appCreated = new AppCreated( entityId(), start.app );
-            return ctx.thenPersist( appCreated, aCrt -> ctx.reply( new CreateAppDone( entityId() ) ) );
-        } );
+        builder.setEventHandler( AppCreated.class,
+                event -> AppState.builder().app( event.app ).status( AppStatus.DRAFT ).build() );
+        builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
+                inactive( AppState.builder().app( state.app.get() ).status( AppStatus.ACTIVE ).build() ) );
 
-        b.setEventHandler( AppCreated.class,
-                event -> AppState.start( event.app ) );
-
-        return b.build();
+        return builder.build();
     }
 
     private Behavior active( AppState state ) {
 
         System.out.println( "===== ACTIVE =====" );
 
-        BehaviorBuilder b = newBehaviorBuilder( state );
+        BehaviorBuilder builder = newBehaviorBuilder( state );
+        addAppCreatedHandler( builder );
+        addGetAppHandler( builder );
 
-        b.setCommandHandler( AddBlockContainer.class, ( cmd, ctx ) ->
+        builder.setCommandHandler( AddBlockContainer.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, new BlockContainerAdded( cmd.blockContainerId ) ) );
-        b.setCommandHandler( RemoveBlockContainer.class, ( cmd, ctx ) ->
+        builder.setCommandHandler( RemoveBlockContainer.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, new BlockContainerRemoved( cmd.blockContainerId ) ) );
-        b.setCommandHandler( DeactivateApp.class, ( cmd, ctx ) ->
+        builder.setCommandHandler( DeactivateApp.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, new AppDeactivated( cmd.appId ) ) );
 
-        b.setReadOnlyCommandHandler( CreateApp.class, this::unprocessedCreate );
-        b.setReadOnlyCommandHandler( ActivateApp.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( ActivateApp.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
 
-        b.setEventHandler( AppDeactivated.class,
-                event -> AppState.builder().app( state.app.get() ).status( AppStatus.INACTIVE ).build() );
+        builder.setEventHandlerChangingBehavior( AppDeactivated.class, d ->
+                inactive( AppState.builder().app( state.app.get() ).status( AppStatus.INACTIVE ).build() ) );
 
-        return b.build();
+        return builder.build();
     }
 
     private Behavior inactive( AppState state ) {
 
         System.out.println( "===== INACTIVE =====" );
 
-        BehaviorBuilder b = newBehaviorBuilder( state );
+        BehaviorBuilder builder = newBehaviorBuilder( state );
+        addAppCreatedHandler( builder );
+        addGetAppHandler( builder );
 
-        b.setReadOnlyCommandHandler( CreateApp.class, this::unprocessedCreate );
-        b.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
 
-        b.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
+        builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, new AppActivated( cmd.appId ) ) );
-        b.setCommandHandler( CancelApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new AppEvent.AppCancelled( cmd.appId ) ) );
+        builder.setCommandHandler( CancelApp.class, ( cmd, ctx ) ->
+                persistAndDone( ctx, new AppCancelled( cmd.appId ) ) );
 
-        b.setEventHandler( AppActivated.class,
-                event -> AppState.builder().app( state.app.get() ).status( AppStatus.INACTIVE ).build() );
-        b.setEventHandlerChangingBehavior( AppCancelled.class, cancel ->
-                cancelled( state().withStatus( AppStatus.CANCELLED ) )
-        );
+        builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
+                active( AppState.builder().app( state.app.get() ).status( AppStatus.ACTIVE ).build() ) );
+        builder.setEventHandlerChangingBehavior( AppCancelled.class, d ->
+                cancelled( AppState.builder().app( state.app.get() ).status( AppStatus.CANCELLED ).build() ) );
 
-        return b.build();
+        return builder.build();
     }
 
     private Behavior cancelled( AppState state ) {
         System.out.println( "===== CANCELLED =====" );
 
-        BehaviorBuilder b = newBehaviorBuilder( state );
-        b.setReadOnlyCommandHandler( CreateApp.class, this::unprocessedCreate );
-        b.setReadOnlyCommandHandler( ActivateApp.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( DeactivateApp.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
-        b.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
-        return b.build();
+        BehaviorBuilder builder = newBehaviorBuilder( state );
+        addAppCreatedHandler( builder );
+        addGetAppHandler( builder );
+        builder.setReadOnlyCommandHandler( ActivateApp.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( DeactivateApp.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
+        builder.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
+        return builder.build();
     }
+
+    private void addAppCreatedHandler( BehaviorBuilder builder ) {
+
+        builder.setCommandHandler( CreateApp.class, ( cmd, ctx ) -> {
+
+            if ( state().app.isPresent() && !state().app.get().isEmpty() ) {
+                ctx.invalidCommand( "App " + entityId() + " is already created" );
+                return ctx.done();
+            }
+            else {
+                AppCreated appCreated = new AppCreated( entityId(), cmd.app );
+                return ctx.thenPersist( appCreated, aCrt -> ctx.reply( new CreateAppDone( entityId() ) ) );
+            }
+        } );
+    }
+
+    private void addGetAppHandler( BehaviorBuilder builder ) {
+
+        builder.setReadOnlyCommandHandler( GetApp.class, ( cmd, ctx ) -> {
+            ctx.reply( new GetAppReply( state().app, state().status ) );
+        } );
+    }
+
+
+
 
     /**
      * Does nothing and replies with {@link Done}
@@ -139,17 +165,6 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
      */
     private void unprocessed( Object command, ReadOnlyCommandContext<Done> ctx ) {
         ctx.reply( Done.getInstance() );
-    }
-
-    /**
-     * Does nothing and replies with {@link Done}
-     *
-     * @param command the command
-     * @param ctx     the context
-     */
-    private void unprocessedCreate( Object command, ReadOnlyCommandContext<CreateAppDone> ctx ) {
-        ctx.invalidCommand( "Invalid command" );
-        ctx.reply( new CreateAppDone( "invalid" ) );
     }
 
     private Persist<AppEvent> persistAndDone( CommandContext<Done> ctx, AppEvent event ) {

@@ -1,6 +1,7 @@
 package com.frank.lagomtest.preferences.api;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * This is an App
@@ -30,6 +31,13 @@ public final class App {
             return this;
         }
 
+        public Builder empty() {
+            this.creatorId = "";
+            this.uniqueId = "";
+            return this;
+        }
+
+
         public App build() {
             return new App( uniqueId, creatorId );
         }
@@ -51,6 +59,11 @@ public final class App {
 
     public String getCreatorId() {
         return creatorId;
+    }
+
+    @JsonIgnore
+    public boolean isEmpty() {
+        return "".equals( uniqueId ) && "".equals( creatorId );
     }
 
     @Override

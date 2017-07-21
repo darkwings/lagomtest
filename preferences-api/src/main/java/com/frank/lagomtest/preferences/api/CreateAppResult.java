@@ -3,13 +3,11 @@ package com.frank.lagomtest.preferences.api;
 /**
  * @author ftorriani
  */
-public final class AppResult {
+public final class CreateAppResult {
 
     private final String appId;
 
-    // TODO altre cose; da decidere
-
-    public AppResult( String appId ) {
+    public CreateAppResult( String appId ) {
         this.appId = appId;
     }
 

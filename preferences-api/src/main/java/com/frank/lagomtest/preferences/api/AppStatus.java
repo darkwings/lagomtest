@@ -1,4 +1,4 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.api;
 
 /**
  * @author ftorriani
@@ -8,7 +8,7 @@ public enum AppStatus {
     /**
      * The App is not started, or doesn't exist yet
      */
-    NOT_STARTED,
+    DRAFT,
 
     /**
      * The App is active

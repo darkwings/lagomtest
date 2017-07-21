@@ -2,6 +2,7 @@ package com.frank.lagomtest.preferences.impl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.frank.lagomtest.preferences.api.App;
+import com.frank.lagomtest.preferences.api.AppStatus;
 import com.lightbend.lagom.serialization.CompressedJsonable;
 
 import java.util.Optional;
@@ -57,7 +58,7 @@ public final class AppState implements CompressedJsonable {
     }
 
     public static AppState notStarted() {
-        return new AppState( Optional.empty(), AppStatus.NOT_STARTED );
+        return new AppState( Optional.empty(), AppStatus.DRAFT );
     }
 
     public static AppState start( App app ) {

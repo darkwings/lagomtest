@@ -23,13 +23,16 @@ public interface PreferencesService extends Service {
      * Example:
      * curl -X POST -d '{'"uniqueId":"my_new_app", "creatorId":"frank"}' http://localhost:9000/api/preferences/app/11221
      */
-    ServiceCall<App, AppResult> newApp( String appId );
+    ServiceCall<App, CreateAppResult> createApp( String appId );
+
+    ServiceCall<NotUsed, AppDetails> getApp( String appId );
 
     @Override
     default Descriptor descriptor() {
         // @formatter:off
         return named( "preferences" ).withCalls(
-                pathCall( "/api/preferences/app/:appId", this::newApp ),
+                pathCall( "/api/preferences/app/:appId", this::createApp ),
+                pathCall( "/api/preferences/app/:appId", this::getApp ),
                 pathCall( "/api/preferences/echo/:message", this::echo )
         ).withAutoAcl( true );
         // @formatter:on
