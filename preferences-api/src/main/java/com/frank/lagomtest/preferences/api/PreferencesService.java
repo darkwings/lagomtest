@@ -15,7 +15,7 @@ import com.lightbend.lagom.javadsl.api.ServiceCall;
 public interface PreferencesService extends Service {
 
     /**
-     * Example: curl http://localhost:9000/api/preferences/echo
+     * Example: curl http://localhost:9000/api/preferences/echo/message
      */
     ServiceCall<NotUsed, String> echo( String message );
 

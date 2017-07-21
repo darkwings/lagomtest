@@ -4,6 +4,7 @@ import akka.NotUsed;
 import com.frank.lagomtest.preferences.api.App;
 import com.frank.lagomtest.preferences.api.AppResult;
 import com.frank.lagomtest.preferences.api.PreferencesService;
+import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRef;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRegistry;
@@ -17,12 +18,12 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  */
 public class PreferencesServiceImpl implements PreferencesService {
 
-    private final PersistentEntityRegistry persistentEntityRegistry;
+    private final PersistentEntityRegistry persistentEntities;
 
     @Inject
-    public PreferencesServiceImpl( PersistentEntityRegistry persistentEntityRegistry ) {
-        this.persistentEntityRegistry = persistentEntityRegistry;
-        persistentEntityRegistry.register( AppEntity.class );
+    public PreferencesServiceImpl( PersistentEntityRegistry persistentEntities ) {
+        this.persistentEntities = persistentEntities;
+        persistentEntities.register( AppEntity.class );
     }
 
     @Override
@@ -32,13 +33,11 @@ public class PreferencesServiceImpl implements PreferencesService {
 
     @Override
     public ServiceCall<App, AppResult> newApp( String appId ) {
-        return request -> {
-
-            return entityRef( appId ).
-                    ask( new AppCommand.CreateApp( request ) ).
+        return app ->
+                persistentEntities.refFor( AppEntity.class, appId ).
+                    ask( new CreateApp( app ) ).
                     thenApply( createAppDone ->
                             new AppResult( ( (AppCommand.CreateAppDone) createAppDone ).getAppId() ) );
-        };
     }
 
     /**
@@ -48,7 +47,7 @@ public class PreferencesServiceImpl implements PreferencesService {
      * @return il riferimento ad una 'persistent entity' App
      */
     private PersistentEntityRef<AppCommand> entityRef( String appId ) {
-        return persistentEntityRegistry.refFor( AppEntity.class, appId );
+        return persistentEntities.refFor( AppEntity.class, appId );
     }
 
     /*

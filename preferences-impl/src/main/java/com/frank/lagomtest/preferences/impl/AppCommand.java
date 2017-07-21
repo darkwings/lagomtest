@@ -44,6 +44,14 @@ public interface AppCommand extends Jsonable {
         }
 
         @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder( "CreateApp{" );
+            sb.append( "app=" ).append( app );
+            sb.append( '}' );
+            return sb.toString();
+        }
+
+        @Override
         public int hashCode() {
             return app != null ? app.hashCode() : 0;
         }

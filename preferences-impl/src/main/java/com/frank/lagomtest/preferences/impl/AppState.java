@@ -21,10 +21,39 @@ public final class AppState implements CompressedJsonable {
      */
     public final AppStatus status;
 
+    /**
+     * {@link AppState} builder
+     */
+    public static class Builder {
+        private App app;
+        private AppStatus status;
+
+        public Builder() {
+        }
+
+        public Builder app( App app ) {
+            this.app = app;
+            return this;
+        }
+
+        public Builder status( AppStatus status ) {
+            this.status = status;
+            return this;
+        }
+
+        public AppState build() {
+            return new AppState( Optional.of( app ), status );
+        }
+    }
+
     @JsonCreator
-    public AppState( Optional<App> app, AppStatus status ) {
+    private AppState( Optional<App> app, AppStatus status ) {
         this.app = app;
         this.status = status;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static AppState notStarted() {

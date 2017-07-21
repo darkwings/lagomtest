@@ -1,6 +1,7 @@
 package com.frank.lagomtest.preferences.impl;
 
 import akka.Done;
+import com.frank.lagomtest.preferences.api.App;
 import com.frank.lagomtest.preferences.impl.AppCommand.*;
 import com.frank.lagomtest.preferences.impl.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
@@ -37,13 +38,21 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
             }
         }
         else {
-            b = notStarted( AppState.notStarted() ); // Se non c'è snapshot, supponiamo che la App sia NOT_STARTED
+            b = notStarted( AppState.builder().
+                    app( App.builder().
+                            creatorId( "" ).
+                            uniqueId( "" ).
+                            build() ).
+                    build() );
         }
 
         return b;
     }
 
     private Behavior notStarted( AppState state ) {
+
+        System.out.println( "===== NOT STARTED =====" );
+
         BehaviorBuilder b = newBehaviorBuilder( state );
 
         b.setReadOnlyCommandHandler( DeactivateApp.class, this::unprocessed );
@@ -53,7 +62,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
         b.setCommandHandler( CreateApp.class, ( start, ctx ) -> {
             AppCreated appCreated = new AppCreated( entityId(), start.app );
-            return ctx.thenPersist( appCreated, aCrt -> new CreateAppDone( entityId() ) );
+            return ctx.thenPersist( appCreated, aCrt -> ctx.reply( new CreateAppDone( entityId() ) ) );
         } );
 
         b.setEventHandler( AppCreated.class,
@@ -63,6 +72,8 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     }
 
     private Behavior active( AppState state ) {
+
+        System.out.println( "===== ACTIVE =====" );
 
         BehaviorBuilder b = newBehaviorBuilder( state );
 
@@ -78,12 +89,14 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         b.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
 
         b.setEventHandler( AppDeactivated.class,
-                event -> new AppState( state.app, AppStatus.INACTIVE ) );
+                event -> AppState.builder().app( state.app.get() ).status( AppStatus.INACTIVE ).build() );
 
         return b.build();
     }
 
     private Behavior inactive( AppState state ) {
+
+        System.out.println( "===== INACTIVE =====" );
 
         BehaviorBuilder b = newBehaviorBuilder( state );
 
@@ -97,7 +110,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 persistAndDone( ctx, new AppEvent.AppCancelled( cmd.appId ) ) );
 
         b.setEventHandler( AppActivated.class,
-                event -> new AppState( state.app, AppStatus.ACTIVE ) );
+                event -> AppState.builder().app( state.app.get() ).status( AppStatus.INACTIVE ).build() );
         b.setEventHandlerChangingBehavior( AppCancelled.class, cancel ->
                 cancelled( state().withStatus( AppStatus.CANCELLED ) )
         );
@@ -106,6 +119,8 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     }
 
     private Behavior cancelled( AppState state ) {
+        System.out.println( "===== CANCELLED =====" );
+
         BehaviorBuilder b = newBehaviorBuilder( state );
         b.setReadOnlyCommandHandler( CreateApp.class, this::unprocessedCreate );
         b.setReadOnlyCommandHandler( ActivateApp.class, this::unprocessed );
