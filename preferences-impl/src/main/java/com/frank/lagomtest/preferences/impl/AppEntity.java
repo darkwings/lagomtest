@@ -68,10 +68,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                         status( AppStatus.DRAFT ).
                         build() );
         builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
-                active( AppState.builder().
-                        app( state.app.get() ).
-                        status( AppStatus.ACTIVE ).
-                        build() ) );
+                active( state().withStatus( AppStatus.ACTIVE ) ) );
 
         return builder.build();
     }
