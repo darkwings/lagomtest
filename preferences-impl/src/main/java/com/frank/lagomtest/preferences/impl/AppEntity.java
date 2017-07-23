@@ -60,12 +60,18 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( AddBlockContainer.class, this::unprocessed );
         builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
         builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new AppActivated( cmd.appId ) ) );
+                persistAndDone( ctx, AppActivated.from( entityId() ) ) );
 
         builder.setEventHandler( AppCreated.class,
-                event -> AppState.builder().app( event.app ).status( AppStatus.DRAFT ).build() );
+                event -> AppState.builder().
+                        app( event.app ).
+                        status( AppStatus.DRAFT ).
+                        build() );
         builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
-                inactive( AppState.builder().app( state.app.get() ).status( AppStatus.ACTIVE ).build() ) );
+                active( AppState.builder().
+                        app( state.app.get() ).
+                        status( AppStatus.ACTIVE ).
+                        build() ) );
 
         return builder.build();
     }
@@ -79,17 +85,18 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         addGetAppHandler( builder );
 
         builder.setCommandHandler( AddBlockContainer.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new BlockContainerAdded( cmd.blockContainerId ) ) );
+                persistAndDone( ctx, BlockContainerAdded.from( cmd.blockContainerId ) ) );
         builder.setCommandHandler( RemoveBlockContainer.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new BlockContainerRemoved( cmd.blockContainerId ) ) );
+                persistAndDone( ctx, BlockContainerRemoved.from( cmd.blockContainerId ) ) );
         builder.setCommandHandler( DeactivateApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new AppDeactivated( cmd.appId ) ) );
+                persistAndDone( ctx, AppDeactivated.from( entityId() ) ) );
 
         builder.setReadOnlyCommandHandler( ActivateApp.class, this::unprocessed );
         builder.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
 
         builder.setEventHandlerChangingBehavior( AppDeactivated.class, d ->
-                inactive( AppState.builder().app( state.app.get() ).status( AppStatus.INACTIVE ).build() ) );
+                inactive( AppState.builder().app( state.app.get() ).
+                        status( AppStatus.INACTIVE ).build() ) );
 
         return builder.build();
     }
@@ -106,14 +113,20 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::unprocessed );
 
         builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new AppActivated( cmd.appId ) ) );
+                persistAndDone( ctx, AppActivated.from( entityId() ) ) );
         builder.setCommandHandler( CancelApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, new AppCancelled( cmd.appId ) ) );
+                persistAndDone( ctx, AppCancelled.from( entityId() ) ) );
 
         builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
-                active( AppState.builder().app( state.app.get() ).status( AppStatus.ACTIVE ).build() ) );
+                active( AppState.builder().
+                        app( state.app.get() ).
+                        status( AppStatus.ACTIVE ).
+                        build() ) );
         builder.setEventHandlerChangingBehavior( AppCancelled.class, d ->
-                cancelled( AppState.builder().app( state.app.get() ).status( AppStatus.CANCELLED ).build() ) );
+                cancelled( AppState.builder().
+                        app( state.app.get() ).
+                        status( AppStatus.CANCELLED ).
+                        build() ) );
 
         return builder.build();
     }
@@ -141,8 +154,11 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 return ctx.done();
             }
             else {
-                AppCreated appCreated = new AppCreated( entityId(), cmd.app );
-                return ctx.thenPersist( appCreated, aCrt -> ctx.reply( new CreateAppDone( entityId() ) ) );
+                return ctx.thenPersist( AppCreated.builder().
+                                appId( entityId() ).
+                                app ( cmd.app ).
+                                build(),
+                        aCrt -> ctx.reply( CreateAppDone.from( entityId() ) ) );
             }
         } );
     }
@@ -150,7 +166,10 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     private void addGetAppHandler( BehaviorBuilder builder ) {
 
         builder.setReadOnlyCommandHandler( GetApp.class, ( cmd, ctx ) -> {
-            ctx.reply( new GetAppReply( state().app, state().status ) );
+            ctx.reply( GetAppReply.builder().
+                    app( state().app ).
+                    status(state().status ).
+                    build() );
         } );
     }
 

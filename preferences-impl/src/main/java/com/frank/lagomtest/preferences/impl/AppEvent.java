@@ -11,6 +11,7 @@ import com.lightbend.lagom.javadsl.persistence.AggregateEventTagger;
 import com.lightbend.lagom.serialization.Jsonable;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.Objects;
 
 /**
  * @author ftorriani
@@ -33,7 +34,36 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public final String appId;
         public final App app;
 
-        public AppCreated( String appId, App app ) {
+        public static class Builder {
+            private Builder() {
+            }
+
+            public String appId;
+            public App app;
+
+            public Builder appId( String appId ) {
+                this.appId = appId;
+                return this;
+            }
+
+            public Builder app( App app ) {
+                this.app = app;
+                return this;
+            }
+
+            public AppCreated build() {
+                return new AppCreated( appId, app );
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+
+        private AppCreated( String appId, App app ) {
+            Objects.requireNonNull( appId );
+            Objects.requireNonNull( app );
             this.appId = appId;
             this.app = app;
         }
@@ -65,8 +95,13 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
         public final String appId;
 
-        public AppDeactivated( String appId ) {
+        private AppDeactivated( String appId ) {
             this.appId = appId;
+        }
+
+        public static AppDeactivated from( String appId ) {
+            Objects.requireNonNull( appId );
+            return new AppDeactivated( appId );
         }
 
         @Override
@@ -96,7 +131,12 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
         public final String appId;
 
-        public AppActivated( String appId ) {
+        public static AppActivated from( String appId ) {
+            Objects.requireNonNull( appId );
+            return new AppActivated( appId );
+        }
+
+        private AppActivated( String appId ) {
             this.appId = appId;
         }
 
@@ -127,8 +167,13 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
         public final String appId;
 
-        public AppCancelled( String appId ) {
+        private AppCancelled( String appId ) {
             this.appId = appId;
+        }
+
+        public static AppCancelled from( String appId ) {
+            Objects.requireNonNull( appId );
+            return new AppCancelled( appId );
         }
 
         @Override
@@ -161,9 +206,13 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 //        public final String appId;
 
         @JsonCreator
-        public BlockContainerAdded( String blockContainerId ) {
-            this.blockContainerId = Preconditions.checkNotNull( blockContainerId, "blockContainerId" );
-            ;
+        private BlockContainerAdded( String blockContainerId ) {
+            this.blockContainerId = blockContainerId;
+        }
+
+        public static BlockContainerAdded from( String blockContainerId ) {
+            Objects.requireNonNull( blockContainerId );
+            return new BlockContainerAdded( blockContainerId );
         }
 
         @Override
@@ -196,9 +245,13 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 //        public final String appId;
 
         @JsonCreator
-        public BlockContainerRemoved( String blockContainerId ) {
+        private BlockContainerRemoved( String blockContainerId ) {
             this.blockContainerId = Preconditions.checkNotNull( blockContainerId, "blockContainerId" );
-            ;
+        }
+
+        public static BlockContainerRemoved from( String blockContainerId ) {
+            Objects.requireNonNull( blockContainerId );
+            return new BlockContainerRemoved( blockContainerId );
         }
 
         @Override

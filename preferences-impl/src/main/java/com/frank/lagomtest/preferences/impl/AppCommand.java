@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.frank.lagomtest.preferences.api.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
-import com.google.common.base.Preconditions;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import com.lightbend.lagom.serialization.CompressedJsonable;
 import com.lightbend.lagom.serialization.Jsonable;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -27,9 +27,13 @@ public interface AppCommand extends Jsonable {
         public final App app;
 
         @JsonCreator
-        public CreateApp( App app ) {
+        private CreateApp( App app ) {
 
             this.app = app;
+        }
+
+        public static CreateApp from( App app ) {
+            return new CreateApp( app );
         }
 
         @Override
@@ -67,8 +71,12 @@ public interface AppCommand extends Jsonable {
 
         private final String appId;
 
+        public static CreateAppDone from( String appId ) {
+            return new CreateAppDone( appId );
+        }
+
         @JsonCreator
-        public CreateAppDone( String appId ) {
+        private CreateAppDone( String appId ) {
             this.appId = appId;
         }
 
@@ -102,8 +110,16 @@ public interface AppCommand extends Jsonable {
     class GetApp implements AppCommand, CompressedJsonable,
             PersistentEntity.ReplyType<GetAppReply> {
 
+        @JsonCreator
+        private GetApp() {
+        }
+
+        public static GetApp build() {
+            return new GetApp();
+        }
+
         @Override
-        public boolean equals(@Nullable Object another) {
+        public boolean equals( @Nullable Object another ) {
             return this instanceof GetApp;
         }
 
@@ -120,7 +136,33 @@ public interface AppCommand extends Jsonable {
         final Optional<App> app;
         final AppStatus status;
 
-        public GetAppReply( Optional<App> app, AppStatus status ) {
+        public static class Builder {
+            Optional<App> app;
+            AppStatus status;
+
+            private Builder() {
+            }
+
+            public Builder app( Optional<App> app ) {
+                this.app = app;
+                return this;
+            }
+
+            public Builder status( AppStatus status ) {
+                this.status = status;
+                return this;
+            }
+
+            public GetAppReply build() {
+                return new GetAppReply( app, status );
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        private GetAppReply( Optional<App> app, AppStatus status ) {
             this.app = app;
             this.status = status == null ? AppStatus.DRAFT : status;
         }
@@ -159,6 +201,35 @@ public interface AppCommand extends Jsonable {
     }
 
     /**
+     * Activates an App
+     */
+    @SuppressWarnings("serial")
+    @Immutable
+    @JsonDeserialize
+    class ActivateApp implements AppCommand, CompressedJsonable,
+            PersistentEntity.ReplyType<Done> {
+
+
+        @JsonCreator
+        private ActivateApp() {
+        }
+
+        public static ActivateApp build() {
+            return new ActivateApp();
+        }
+
+        @Override
+        public boolean equals( @Nullable Object another ) {
+            return this instanceof ActivateApp;
+        }
+
+        @Override
+        public int hashCode() {
+            return 328648271;
+        }
+    }
+
+    /**
      * Deactivates an App
      */
     @SuppressWarnings("serial")
@@ -166,31 +237,23 @@ public interface AppCommand extends Jsonable {
     @JsonDeserialize
     class DeactivateApp implements AppCommand, CompressedJsonable,
             PersistentEntity.ReplyType<Done> {
-        public final String appId;
 
         @JsonCreator
-        public DeactivateApp( String appId ) {
+        private DeactivateApp() {
+        }
 
-            this.appId = Preconditions.checkNotNull( appId, "appId" );
+        public static DeactivateApp build() {
+            return new DeactivateApp();
         }
 
         @Override
-        public boolean equals( Object o ) {
-            if ( this == o ) {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() ) {
-                return false;
-            }
-
-            DeactivateApp that = (DeactivateApp) o;
-
-            return appId != null ? appId.equals( that.appId ) : that.appId == null;
+        public boolean equals( @Nullable Object another ) {
+            return this instanceof DeactivateApp;
         }
 
         @Override
         public int hashCode() {
-            return appId != null ? appId.hashCode() : 0;
+            return 8741023;
         }
     }
 
@@ -202,69 +265,27 @@ public interface AppCommand extends Jsonable {
     @JsonDeserialize
     class CancelApp implements AppCommand, CompressedJsonable,
             PersistentEntity.ReplyType<Done> {
-        public final String appId;
+
 
         @JsonCreator
-        public CancelApp( String appId ) {
+        private CancelApp() {
+        }
 
-            this.appId = Preconditions.checkNotNull( appId, "appId" );
+        public static CancelApp build() {
+            return new CancelApp();
         }
 
         @Override
-        public boolean equals( Object o ) {
-            if ( this == o ) {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() ) {
-                return false;
-            }
-
-            DeactivateApp that = (DeactivateApp) o;
-
-            return appId != null ? appId.equals( that.appId ) : that.appId == null;
+        public boolean equals( @Nullable Object another ) {
+            return this instanceof CancelApp;
         }
 
         @Override
         public int hashCode() {
-            return appId != null ? appId.hashCode() : 0;
+            return 140581230;
         }
     }
 
-    /**
-     * Activates an App
-     */
-    @SuppressWarnings("serial")
-    @Immutable
-    @JsonDeserialize
-    class ActivateApp implements AppCommand, CompressedJsonable,
-            PersistentEntity.ReplyType<Done> {
-        public final String appId;
-
-        @JsonCreator
-        public ActivateApp( String appId ) {
-
-            this.appId = Preconditions.checkNotNull( appId, "appId" );
-        }
-
-        @Override
-        public boolean equals( Object o ) {
-            if ( this == o ) {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() ) {
-                return false;
-            }
-
-            DeactivateApp that = (DeactivateApp) o;
-
-            return appId != null ? appId.equals( that.appId ) : that.appId == null;
-        }
-
-        @Override
-        public int hashCode() {
-            return appId != null ? appId.hashCode() : 0;
-        }
-    }
 
     /**
      * Adds a block container to an {@link AppEntity}
@@ -278,9 +299,13 @@ public interface AppCommand extends Jsonable {
         public final String blockContainerId;
 
         @JsonCreator
-        public AddBlockContainer( String blockContainerId ) {
+        private AddBlockContainer( String blockContainerId ) {
+            this.blockContainerId = blockContainerId;
+        }
 
-            this.blockContainerId = Preconditions.checkNotNull( blockContainerId, "blockContainerId" );
+        public static AddBlockContainer from( String blockContainerId ) {
+            Objects.requireNonNull(blockContainerId);
+            return new AddBlockContainer( blockContainerId );
         }
 
         @Override
@@ -315,9 +340,13 @@ public interface AppCommand extends Jsonable {
         public final String blockContainerId;
 
         @JsonCreator
-        public RemoveBlockContainer( String blockContainerId ) {
+        private RemoveBlockContainer( String blockContainerId ) {
+            this.blockContainerId = blockContainerId;
+        }
 
-            this.blockContainerId = Preconditions.checkNotNull( blockContainerId, "blockContainerId" );
+        public static RemoveBlockContainer from( String blockContainerId ) {
+            Objects.requireNonNull(blockContainerId);
+            return new RemoveBlockContainer( blockContainerId );
         }
 
         @Override

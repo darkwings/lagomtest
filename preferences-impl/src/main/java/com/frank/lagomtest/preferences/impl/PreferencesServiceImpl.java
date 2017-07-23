@@ -1,11 +1,15 @@
 package com.frank.lagomtest.preferences.impl;
 
+import akka.Done;
 import akka.NotUsed;
 import com.frank.lagomtest.preferences.api.App;
 import com.frank.lagomtest.preferences.api.AppDetails;
 import com.frank.lagomtest.preferences.api.CreateAppResult;
 import com.frank.lagomtest.preferences.api.PreferencesService;
+import com.frank.lagomtest.preferences.impl.AppCommand.ActivateApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
+import com.frank.lagomtest.preferences.impl.AppCommand.GetApp;
+import com.frank.lagomtest.preferences.impl.AppCommand.GetAppReply;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.lightbend.lagom.javadsl.api.transport.NotFound;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntityRef;
@@ -37,19 +41,24 @@ public class PreferencesServiceImpl implements PreferencesService {
     public ServiceCall<App, CreateAppResult> createApp( String appId ) {
         return request ->
                 persistentEntities.refFor( AppEntity.class, appId ).
-                        ask( new CreateApp( request ) ).
+                        ask( CreateApp.from( request ) ).
                         thenApply( createAppDone ->
-                                new CreateAppResult( ( (AppCommand.CreateAppDone) createAppDone ).getAppId() ) );
+                                CreateAppResult.from( appId ) );
     }
 
     @Override
     public ServiceCall<NotUsed, AppDetails> getApp( String appId ) {
-        return request -> persistentEntities.refFor( AppEntity.class, appId ).
-                ask( new AppCommand.GetApp() ).
+        return request -> entityRef( appId ).
+                ask( GetApp.build() ).
                 thenApply( r -> {
-                    AppCommand.GetAppReply reply = (AppCommand.GetAppReply) r;
+                    GetAppReply reply = (GetAppReply) r;
                     if ( reply.getApp().isPresent() && !reply.getApp().get().isEmpty() ) {
-                        return new AppDetails( appId, reply.getApp().get(), reply.getStatus() );
+
+                        return AppDetails.builder().
+                                appId( appId ).
+                                app (reply.getApp().get() ).
+                                status( reply.getStatus() ).
+                                build();
                     }
                     else {
                         throw new NotFound( "app " + appId + " not found" );
@@ -57,6 +66,13 @@ public class PreferencesServiceImpl implements PreferencesService {
                 } );
     }
 
+    @Override
+    public ServiceCall<NotUsed, Done> activate( String appId ) {
+        // TODO: occorre controllare se appId esiste o no
+        return request -> entityRef( appId ).
+                ask( ActivateApp.build() ).
+                thenApply( r -> Done.getInstance() );
+    }
 
     /**
      * Permette di ottenere il riferimento ad una entity
@@ -67,16 +83,4 @@ public class PreferencesServiceImpl implements PreferencesService {
     private PersistentEntityRef<AppCommand> entityRef( String appId ) {
         return persistentEntities.refFor( AppEntity.class, appId );
     }
-
-    /*
-      Esempio di come inviare un comando ad una entity'
-      @Override
-      public ServiceCall<BlogCommand.AddPost, String> addPost(String id) {
-        return request -> {
-          PersistentEntityRef<BlogCommand> ref =
-            persistentEntities.refFor(Post.class, id);
-          return ref.ask(request).thenApply(ack -> "OK");
-        };
-      }
-     */
 }

@@ -1,13 +1,13 @@
 package com.frank.lagomtest.preferences.api;
 
-import static com.lightbend.lagom.javadsl.api.Service.named;
-import static com.lightbend.lagom.javadsl.api.Service.namedCall;
-import static com.lightbend.lagom.javadsl.api.Service.pathCall;
-
+import akka.Done;
 import akka.NotUsed;
 import com.lightbend.lagom.javadsl.api.Descriptor;
 import com.lightbend.lagom.javadsl.api.Service;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
+import com.lightbend.lagom.javadsl.api.transport.Method;
+
+import static com.lightbend.lagom.javadsl.api.Service.*;
 
 /**
  * @author ftorriani
@@ -27,12 +27,15 @@ public interface PreferencesService extends Service {
 
     ServiceCall<NotUsed, AppDetails> getApp( String appId );
 
+    ServiceCall<NotUsed, Done> activate( String appId );
+
     @Override
     default Descriptor descriptor() {
         // @formatter:off
         return named( "preferences" ).withCalls(
                 pathCall( "/api/preferences/app/:appId", this::createApp ),
                 pathCall( "/api/preferences/app/:appId", this::getApp ),
+                restCall( Method.POST, "/api/preferences/activate/:appId", this::activate ),
                 pathCall( "/api/preferences/echo/:message", this::echo )
         ).withAutoAcl( true );
         // @formatter:on
