@@ -1,13 +1,16 @@
 package com.frank.lagomtest.preferences.impl;
 
 import akka.Done;
-import com.frank.lagomtest.preferences.api.App;
+import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.impl.AppCommand.*;
 import com.frank.lagomtest.preferences.impl.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 
 import java.util.Optional;
+
+import static com.frank.lagomtest.preferences.api.AppStatus.ACTIVE;
+import static com.frank.lagomtest.preferences.api.AppStatus.CANCELLED;
 
 /**
  * The App entity
@@ -40,7 +43,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         }
         else {
             b = draft( AppState.builder().
-                    app( App.builder().empty().build() ).
+                    app( App.empty() ).
                     build() );
         }
 
@@ -67,8 +70,11 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                         app( event.app ).
                         status( AppStatus.DRAFT ).
                         build() );
-        builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
-                active( state().withStatus( AppStatus.ACTIVE ) ) );
+
+        builder.setEventHandlerChangingBehavior( AppActivated.class, event ->
+                active( AppState.builder( state() ).
+                        status( ACTIVE ).
+                        build() ) );
 
         return builder.build();
     }
@@ -92,8 +98,9 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( CancelApp.class, this::unprocessed );
 
         builder.setEventHandlerChangingBehavior( AppDeactivated.class, d ->
-                inactive( AppState.builder().app( state.app.get() ).
-                        status( AppStatus.INACTIVE ).build() ) );
+                inactive( AppState.builder( state() ).
+                        status( AppStatus.INACTIVE ).
+                        build() ) );
 
         return builder.build();
     }
@@ -115,14 +122,12 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 persistAndDone( ctx, AppCancelled.from( entityId() ) ) );
 
         builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
-                active( AppState.builder().
-                        app( state.app.get() ).
-                        status( AppStatus.ACTIVE ).
+                active( AppState.builder( state () ).
+                        status( ACTIVE ).
                         build() ) );
         builder.setEventHandlerChangingBehavior( AppCancelled.class, d ->
-                cancelled( AppState.builder().
-                        app( state.app.get() ).
-                        status( AppStatus.CANCELLED ).
+                cancelled( AppState.builder( state() ).
+                        status( CANCELLED ).
                         build() ) );
 
         return builder.build();

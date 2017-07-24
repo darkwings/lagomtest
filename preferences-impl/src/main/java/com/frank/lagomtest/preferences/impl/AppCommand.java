@@ -3,7 +3,7 @@ package com.frank.lagomtest.preferences.impl;
 import akka.Done;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.frank.lagomtest.preferences.api.App;
+import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import com.lightbend.lagom.serialization.CompressedJsonable;

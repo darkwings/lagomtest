@@ -6,7 +6,7 @@ package com.frank.lagomtest.preferences.api;
 public enum AppStatus {
 
     /**
-     * The App is not started, or doesn't exist yet
+     * The App is in its initial phase
      */
     DRAFT,
 

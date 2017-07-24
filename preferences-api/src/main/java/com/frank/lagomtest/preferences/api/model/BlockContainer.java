@@ -1,4 +1,6 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.api.model;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,6 +14,7 @@ public class BlockContainer {
     public final String blockContainerId;
     public final Collection<Block> blocks;
 
+    @JsonCreator
     public BlockContainer( String blockContainerId, Collection<Block> blocks ) {
         this.blockContainerId = blockContainerId;
         this.blocks = Collections.unmodifiableCollection( blocks );

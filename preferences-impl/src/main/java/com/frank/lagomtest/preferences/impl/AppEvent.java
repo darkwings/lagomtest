@@ -2,7 +2,7 @@ package com.frank.lagomtest.preferences.impl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.frank.lagomtest.preferences.api.App;
+import com.frank.lagomtest.preferences.api.model.App;
 import com.google.common.base.Preconditions;
 import com.lightbend.lagom.javadsl.persistence.AggregateEvent;
 import com.lightbend.lagom.javadsl.persistence.AggregateEventShards;
@@ -18,6 +18,8 @@ import java.util.Objects;
  */
 public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
+    //#sharded-tags
+
     int NUM_SHARDS = 4;
 
     AggregateEventShards<AppEvent> TAG = AggregateEventTag.sharded( AppEvent.class, NUM_SHARDS );
@@ -26,6 +28,8 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     default AggregateEventTagger<AppEvent> aggregateTag() {
         return TAG;
     }
+
+    //#sharded-tags
 
     @SuppressWarnings("serial")
     @Immutable
@@ -60,7 +64,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
             return new Builder();
         }
 
-
+        @JsonCreator
         private AppCreated( String appId, App app ) {
             Objects.requireNonNull( appId );
             Objects.requireNonNull( app );
@@ -95,6 +99,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
         public final String appId;
 
+        @JsonCreator
         private AppDeactivated( String appId ) {
             this.appId = appId;
         }
@@ -136,6 +141,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
             return new AppActivated( appId );
         }
 
+        @JsonCreator
         private AppActivated( String appId ) {
             this.appId = appId;
         }
@@ -167,6 +173,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
         public final String appId;
 
+        @JsonCreator
         private AppCancelled( String appId ) {
             this.appId = appId;
         }
@@ -203,7 +210,6 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     class BlockContainerAdded implements AppEvent {
 
         public final String blockContainerId;
-//        public final String appId;
 
         @JsonCreator
         private BlockContainerAdded( String blockContainerId ) {

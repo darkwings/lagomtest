@@ -1,13 +1,16 @@
 package com.frank.lagomtest.preferences.impl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.frank.lagomtest.preferences.api.App;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.lightbend.lagom.serialization.CompressedJsonable;
 
 import java.util.Optional;
 
 /**
+ * Persistent status of an application
+ *
  * @author ftorriani
  */
 public final class AppState implements CompressedJsonable {
@@ -53,19 +56,31 @@ public final class AppState implements CompressedJsonable {
         this.status = status;
     }
 
+    /**
+     * @return a {@link Builder}
+     */
     public static Builder builder() {
         return new Builder();
     }
 
-    public static AppState notStarted() {
-        return new AppState( Optional.empty(), AppStatus.DRAFT );
+    @JsonIgnore
+    public boolean isEmpty() {
+        return !app.isPresent();
     }
 
-    public static AppState start( App app ) {
-        return new AppState( Optional.of( app ), AppStatus.ACTIVE );
-    }
+    /**
+     * Creates a builder starting from previous state, getting the {@link App}
+     *
+     * @param previousState the previous state
+     * @return a {@link Builder} initialized with the current {@link App}
+     */
+    public static Builder builder( AppState previousState ) {
+        if ( previousState.isEmpty() ) {
+            throw new IllegalStateException( "Cannot instantiate a Builder from an empty state" );
+        }
 
-    public AppState withStatus( AppStatus status ) {
-        return new AppState( app, status );
+        Builder b = new Builder();
+        b.app = previousState.app.get();
+        return b;
     }
 }

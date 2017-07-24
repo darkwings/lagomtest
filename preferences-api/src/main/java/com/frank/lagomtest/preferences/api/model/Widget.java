@@ -1,4 +1,6 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.api.model;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
 
 /**
  * @author ftorriani
@@ -7,6 +9,7 @@ public class Widget {
 
     public final String widgetId;
 
+    @JsonCreator
     public Widget( String widgetId ) {
         this.widgetId = widgetId;
     }

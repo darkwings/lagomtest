@@ -16,5 +16,7 @@ public class PreferencesModule extends AbstractModule implements ServiceGuiceSup
     protected void configure() {
 
         bindService( PreferencesService.class, PreferencesServiceImpl.class );
+
+//        bind( AppEventProcessor.class ).asEagerSingleton();
     }
 }

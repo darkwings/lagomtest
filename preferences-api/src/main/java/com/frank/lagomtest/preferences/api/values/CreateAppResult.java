@@ -1,4 +1,4 @@
-package com.frank.lagomtest.preferences.api;
+package com.frank.lagomtest.preferences.api.values;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
