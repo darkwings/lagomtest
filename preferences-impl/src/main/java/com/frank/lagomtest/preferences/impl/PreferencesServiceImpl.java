@@ -67,24 +67,27 @@ public class PreferencesServiceImpl implements PreferencesService {
 
     @Override
     public ServiceCall<NotUsed, AppDetails> getApp( String appId ) {
-        return request -> entityRef( appId ).
-                ask( GetApp.build() ).
-                thenApply( r -> {
-                    GetAppReply reply = (GetAppReply) r;
-                    if ( reply.getApp().isPresent() && !reply.getApp().get().isEmpty() ) {
 
-                        return AppDetails.builder().
-                                appId( appId ).
-                                app (reply.getApp().get() ).
-                                status( reply.getStatus() ).
-                                build();
-                    }
-                    else {
-                        throw new NotFound( "app " + appId + " not found" );
-                    }
-                } );
-
-        // TODO convertire in query cassandra
+        return request -> {
+            CompletionStage<AppDetails> result =
+                    cassandraSession.selectOne( "SELECT description, creator_id, status " +
+                    "FROM appsummary where id = ?", appId ).
+                    thenApply( opt -> {
+                        if ( opt.isPresent() ) {
+                            return opt.get();
+                        }
+                        else {
+                            throw new NotFound( "app " + appId + " not found" );
+                        }
+                    }).
+                    thenApply( row -> AppDetails.builder().
+                            appId( appId ).
+                            description( row.getString( "description" ) ).
+                            creatorId( row.getString( "creator_id" ) ).
+                            status( AppStatus.valueOf( row.getString( "status" ) ) ).
+                            build() );
+            return result;
+        };
     }
 
     @Override
