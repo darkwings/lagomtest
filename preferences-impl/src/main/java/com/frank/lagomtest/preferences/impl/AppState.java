@@ -65,7 +65,7 @@ public final class AppState implements CompressedJsonable {
 
     @JsonIgnore
     public boolean isEmpty() {
-        return !app.isPresent();
+        return !app.isPresent() || app.get().isEmpty();
     }
 
     /**
