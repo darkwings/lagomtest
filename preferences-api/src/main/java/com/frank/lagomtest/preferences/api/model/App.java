@@ -1,7 +1,9 @@
 package com.frank.lagomtest.preferences.api.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * This is an App
@@ -22,7 +24,7 @@ public final class App {
     }
 
     @JsonCreator
-    private App( String description, String creatorId ) {
+    private App( @JsonProperty("description") String description, @JsonProperty("creatorId") String creatorId ) {
         this.description = description;
         this.creatorId = creatorId;
     }

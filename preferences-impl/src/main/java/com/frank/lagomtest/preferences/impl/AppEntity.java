@@ -23,6 +23,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     public Behavior initialBehavior( Optional<AppState> snapshot ) {
         Behavior b;
         if ( snapshot.isPresent() ) {
+        		System.out.println( "AppEntity.initialBehavior: Snapshot is present" );
             AppState state = snapshot.get();
             switch ( state.status ) {
                 case DRAFT:
@@ -42,6 +43,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
             }
         }
         else {
+        	    System.out.println( "AppEntity.initialBehavior: Snapshot is NOT present" );
             b = draft( AppState.builder().
                     app( App.empty() ).
                     build() );
@@ -52,7 +54,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
     private Behavior draft( AppState state ) {
 
-        System.out.println( "===== DRAFT =====" );
+        System.out.println( "AppEntity: ===== DRAFT =====" );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -82,7 +84,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
     private Behavior active( AppState state ) {
 
-        System.out.println( "===== ACTIVE =====" );
+        System.out.println( "AppEntity: ===== ACTIVE =====" );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -115,7 +117,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
     private Behavior inactive( AppState state ) {
 
-        System.out.println( "===== INACTIVE =====" );
+        System.out.println( "AppEntity: ===== INACTIVE =====" );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -142,7 +144,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     }
 
     private Behavior cancelled( AppState state ) {
-        System.out.println( "===== CANCELLED =====" );
+        System.out.println( "AppEntity: ===== CANCELLED =====" );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -165,18 +167,12 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 ctx.invalidCommand( "App " + entityId() + " cannot be created" );
                 return ctx.done();
             }
-            else {
-                if ( ! state().app.isPresent() ) {
+            else {           
                     return ctx.thenPersist( AppCreated.builder().
                                     appId( entityId() ).
                                     app( cmd.app ).
                                     build(),
-                            aCrt -> ctx.reply( CreateAppDone.from( entityId() ) ) );
-                }
-                else {
-                    ctx.invalidCommand( "App " + entityId() + " cannot be created" );
-                    return ctx.done();
-                }
+                            aCrt -> ctx.reply( CreateAppDone.from( entityId() ) ) );               
             }
         } );
     }
@@ -190,8 +186,6 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                     build() );
         } );
     }
-
-
 
 
     /**

@@ -1,9 +1,9 @@
 package com.frank.lagomtest.preferences.impl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.frank.lagomtest.preferences.api.model.App;
-import com.google.common.base.Preconditions;
 import com.lightbend.lagom.javadsl.persistence.AggregateEvent;
 import com.lightbend.lagom.javadsl.persistence.AggregateEventShards;
 import com.lightbend.lagom.javadsl.persistence.AggregateEventTag;
@@ -65,7 +65,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         }
 
         @JsonCreator
-        private AppCreated( String appId, App app ) {
+        private AppCreated( @JsonProperty("appId") String appId, @JsonProperty("app") App app ) {
             Objects.requireNonNull( appId );
             Objects.requireNonNull( app );
             this.appId = appId;
@@ -90,6 +90,19 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public int hashCode() {
             return appId != null ? appId.hashCode() : 0;
         }
+
+		@Override
+		public String toString() {
+			StringBuilder builder2 = new StringBuilder();
+			builder2.append("AppCreated [appId=");
+			builder2.append(appId);
+			builder2.append(", app=");
+			builder2.append(app);
+			builder2.append("]");
+			return builder2.toString();
+		}
+        
+        
     }
 
     @SuppressWarnings("serial")
@@ -213,7 +226,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public final String appId;
 
         @JsonCreator
-        private BlockContainerAdded( String appId, String blockContainerId ) {
+        private BlockContainerAdded( @JsonProperty("appId") String appId, @JsonProperty("blockContainerId") String blockContainerId ) {
             Objects.requireNonNull( appId );
             Objects.requireNonNull( blockContainerId );
             this.appId = appId;
@@ -302,7 +315,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         }
 
         @JsonCreator
-        private BlockContainerRemoved( String appId, String blockContainerId ) {
+        private BlockContainerRemoved( @JsonProperty("appId") String appId, @JsonProperty("blockContainerId") String blockContainerId ) {
             Objects.requireNonNull( appId );
             Objects.requireNonNull( blockContainerId );
             this.appId = appId;

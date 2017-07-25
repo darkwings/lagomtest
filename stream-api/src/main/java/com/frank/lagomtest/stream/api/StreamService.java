@@ -22,9 +22,12 @@ public interface StreamService extends Service {
 
   ServiceCall<Source<String, NotUsed>, Source<String, NotUsed>> stream();
 
+  ServiceCall<NotUsed, Source<String, NotUsed>> appEvents();
+
   @Override
   default Descriptor descriptor() {
-    return named("stream").withCalls(namedCall("stream", this::stream))
+    return named("stream").
+            withCalls(namedCall("appEvents", this::appEvents))
       .withAutoAcl(true);
   }
 }
