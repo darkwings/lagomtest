@@ -5,11 +5,11 @@
     <formats>
         <format>zip</format>
     </formats>
-    <baseDirectory>stream-v1</baseDirectory>
+    <baseDirectory>stream-impl</baseDirectory>
 
     <dependencySets>
         <dependencySet>
-            <outputDirectory>stream/lib</outputDirectory>
+            <outputDirectory>lib</outputDirectory>
             <outputFileNameMapping>${artifact.groupId}-${artifact.artifactId}-${artifact.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
         </dependencySet>
     </dependencySets>
@@ -19,12 +19,12 @@
             <outputDirectory></outputDirectory>
             <directory>src/bundle</directory>
             <excludes>
-                <exclude>stream/bin/**</exclude>
+                <exclude>bin/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>
-            <outputDirectory>stream/bin</outputDirectory>
-            <directory>src/bundle/stream/bin</directory>
+            <outputDirectory>bin</outputDirectory>
+            <directory>src/bundle/bin</directory>
             <fileMode>0755</fileMode>
         </fileSet>
     </fileSets>

@@ -210,15 +210,40 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     class BlockContainerAdded implements AppEvent {
 
         public final String blockContainerId;
+        public final String appId;
 
         @JsonCreator
-        private BlockContainerAdded( String blockContainerId ) {
+        private BlockContainerAdded( String appId, String blockContainerId ) {
+            Objects.requireNonNull( appId );
+            Objects.requireNonNull( blockContainerId );
+            this.appId = appId;
             this.blockContainerId = blockContainerId;
         }
 
-        public static BlockContainerAdded from( String blockContainerId ) {
-            Objects.requireNonNull( blockContainerId );
-            return new BlockContainerAdded( blockContainerId );
+        public static class Builder {
+            private String blockContainerId;
+            private String appId;
+
+            private Builder() {
+            }
+
+            public Builder blockContainerId( String blockContainerId ) {
+                this.blockContainerId = blockContainerId;
+                return this;
+            }
+
+            public Builder appId( String appId ) {
+                this.appId = appId;
+                return this;
+            }
+
+            BlockContainerAdded build() {
+                return new BlockContainerAdded( appId, blockContainerId );
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
         }
 
         @Override
@@ -248,17 +273,42 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     class BlockContainerRemoved implements AppEvent {
 
         public final String blockContainerId;
-//        public final String appId;
+        public final String appId;
+
+        public static class Builder {
+            private String blockContainerId;
+            private String appId;
+
+            private Builder() {
+            }
+
+            public Builder blockContainerId( String blockContainerId ) {
+                this.blockContainerId = blockContainerId;
+                return this;
+            }
+
+            public Builder appId( String appId ) {
+                this.appId = appId;
+                return this;
+            }
+
+            BlockContainerRemoved build() {
+                return new BlockContainerRemoved( appId, blockContainerId );
+            }
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
 
         @JsonCreator
-        private BlockContainerRemoved( String blockContainerId ) {
-            this.blockContainerId = Preconditions.checkNotNull( blockContainerId, "blockContainerId" );
+        private BlockContainerRemoved( String appId, String blockContainerId ) {
+            Objects.requireNonNull( appId );
+            Objects.requireNonNull( blockContainerId );
+            this.appId = appId;
+            this.blockContainerId = blockContainerId;
         }
 
-        public static BlockContainerRemoved from( String blockContainerId ) {
-            Objects.requireNonNull( blockContainerId );
-            return new BlockContainerRemoved( blockContainerId );
-        }
 
         @Override
         public boolean equals( Object o ) {

@@ -19,7 +19,7 @@
             <outputDirectory></outputDirectory>
             <directory>src/bundle</directory>
             <excludes>
-                <exclude>hello/bin/**</exclude>
+                <exclude>bin/**</exclude>
             </excludes>
         </fileSet>
         <fileSet>

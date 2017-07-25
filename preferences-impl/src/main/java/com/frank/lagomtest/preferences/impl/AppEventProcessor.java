@@ -22,11 +22,31 @@ import static com.lightbend.lagom.javadsl.persistence.cassandra.CassandraReadSid
  */
 public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
 
+    public static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
+            "id TEXT, description TEXT, creator_id TEXT, status TEXT, PRIMARY KEY (id))";
+
+    public static final String CREATE_BLOCKCONTAINERS = "CREATE TABLE IF NOT EXISTS blockcontainers ( " +
+            "id TEXT, app_id TEXT, PRIMARY KEY (id))";
+
+    public static final String INSERT_INTO_APPSUMMARY = "INSERT INTO appsummary " +
+            "(id, description, creator_id, status) " +
+            "VALUES (?, ?, ?, ?)";
+
+    public static final String UPDATE_APPSUMMARY = "UPDATE appsummary set status=? where id=?";
+
+    public static final String INSERT_INTO_BLOCKCONTAINERS = "INSERT INTO blockcontainers (id, app_id) " +
+            "VALUES (?, ?)";
+
+    public static final String DELETE_FROM_BLOCKCONTAINERS = "DELETE FROM blockcontainers where id = ?";
+
     private final CassandraSession session;
     private final CassandraReadSide readSide;
 
     private PreparedStatement writeApp = null;
     private PreparedStatement updateStatusApp = null;
+    private PreparedStatement writeBlockContainer = null;
+    private PreparedStatement deleteBlockContainer = null;
+
 
     @Inject
     public AppEventProcessor( CassandraSession session, CassandraReadSide readSide ) {
@@ -44,26 +64,39 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
         builder.setEventHandler( AppEvent.AppActivated.class, this::processAppActivated );
         builder.setEventHandler( AppEvent.AppDeactivated.class, this::processAppDeactivated );
         builder.setEventHandler( AppEvent.AppCancelled.class, this::processAppCancelled );
+        builder.setEventHandler( AppEvent.BlockContainerAdded.class, this::processBlockContainerAdded );
+        builder.setEventHandler( AppEvent.BlockContainerRemoved.class, this::processBlockContainerRemoved );
         return builder.build();
     }
 
     private CompletionStage<Done> createTable() {
-        return session.executeCreateTable( "CREATE TABLE IF NOT EXISTS appsummary ( " +
-                "id TEXT, description TEXT, creator_id TEXT, status TEXT, PRIMARY KEY (id))" );
+        return session.
+                executeCreateTable( CREATE_APPSUMMARY ).
+                thenCompose( d -> session.executeCreateTable( CREATE_BLOCKCONTAINERS ) );
     }
 
     private CompletionStage<Done> prepareWriteApp() {
-        return session.prepare( "INSERT INTO appsummary (id, description, creator_id, status) " +
-                "VALUES (?, ?, ?, ?)" )
-                .thenApply( ps -> {
-                    this.writeApp = ps;
-                    return Done.getInstance();
-                } ).
-                        thenCompose( d -> session.prepare( "UPDATE appsummary set status=? where id=?" ) ).
+        return session.prepare( INSERT_INTO_APPSUMMARY )
+                        .thenApply( ps -> {
+                            this.writeApp = ps;
+                            return Done.getInstance();
+                        } ).
+                        thenCompose( d -> session.prepare( UPDATE_APPSUMMARY ) ).
                         thenApply( ps -> {
                             this.updateStatusApp = ps;
                             return Done.getInstance();
-                        } );
+                        } ).
+                        thenCompose( d -> session.prepare( INSERT_INTO_BLOCKCONTAINERS ) ).
+                        thenApply( ps -> {
+                            this.writeBlockContainer = ps;
+                            return Done.getInstance();
+                        } ).
+                        thenCompose( d -> session.prepare( DELETE_FROM_BLOCKCONTAINERS ) ).
+                        thenApply( ps -> {
+                            this.deleteBlockContainer = ps;
+                            return Done.getInstance();
+                        } )
+                ;
     }
 
     private CompletionStage<List<BoundStatement>> processAppCreated( AppEvent.AppCreated event ) {
@@ -93,6 +126,19 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.CANCELLED.name() );
+        return completedStatements( Arrays.asList( bindWriteApp ) );
+    }
+
+    private CompletionStage<List<BoundStatement>> processBlockContainerAdded( AppEvent.BlockContainerAdded event ) {
+        BoundStatement bindWriteApp = writeBlockContainer.bind();
+        bindWriteApp.setString( "id", event.blockContainerId );
+        bindWriteApp.setString( "app_id", event.appId );
+        return completedStatements( Arrays.asList( bindWriteApp ) );
+    }
+
+    private CompletionStage<List<BoundStatement>> processBlockContainerRemoved( AppEvent.BlockContainerRemoved event ) {
+        BoundStatement bindWriteApp = deleteBlockContainer.bind();
+        bindWriteApp.setString( "id", event.blockContainerId );
         return completedStatements( Arrays.asList( bindWriteApp ) );
     }
 
