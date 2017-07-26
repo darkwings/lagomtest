@@ -109,6 +109,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppActivated( AppEvent.AppActivated event ) {
+    		System.out.println( "AppEventProcessor.processAppActivated -> " + event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.ACTIVE.name() );
@@ -116,6 +117,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppDeactivated( AppEvent.AppDeactivated event ) {
+    	    System.out.println( "AppEventProcessor.processAppDeactivated -> " + event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.INACTIVE.name() );
@@ -123,6 +125,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppCancelled( AppEvent.AppCancelled event ) {
+       	System.out.println( "AppEventProcessor.processAppCancelled -> " + event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.CANCELLED.name() );
@@ -130,6 +133,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processBlockContainerAdded( AppEvent.BlockContainerAdded event ) {
+      	System.out.println( "AppEventProcessor.processBlockContainerAdded -> " + event );
         BoundStatement bindWriteApp = writeBlockContainer.bind();
         bindWriteApp.setString( "id", event.blockContainerId );
         bindWriteApp.setString( "app_id", event.appId );
@@ -137,6 +141,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processBlockContainerRemoved( AppEvent.BlockContainerRemoved event ) {
+    	    System.out.println( "AppEventProcessor.processBlockContainerRemoved -> " + event );
         BoundStatement bindWriteApp = deleteBlockContainer.bind();
         bindWriteApp.setString( "id", event.blockContainerId );
         return completedStatements( Arrays.asList( bindWriteApp ) );

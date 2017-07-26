@@ -92,12 +92,12 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
         builder.setCommandHandler( AddBlockContainer.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, BlockContainerAdded.builder().
-                        appId(entityId()).
+                        appId( entityId() ).
                         blockContainerId( cmd.blockContainerId ).
                         build() ) );
         builder.setCommandHandler( RemoveBlockContainer.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, BlockContainerRemoved.builder().
-                        appId(entityId()).
+                        appId( entityId() ).
                         blockContainerId( cmd.blockContainerId ).
                         build() ) );
 
@@ -111,7 +111,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 inactive( AppState.builder( state() ).
                         status( AppStatus.INACTIVE ).
                         build() ) );
-
+      
         return builder.build();
     }
 

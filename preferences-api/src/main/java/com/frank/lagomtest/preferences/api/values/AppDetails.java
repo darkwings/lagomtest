@@ -19,12 +19,12 @@ public class AppDetails {
     public final AppStatus status;
 
     public static class Builder {
-        private String appId;
-        private String description;
-        private String creatorId;
-        private AppStatus status;
+        protected String appId;
+        protected String description;
+        protected String creatorId;
+        protected AppStatus status;
 
-        private Builder() {
+        protected Builder() {
         }
 
         public Builder appId( String appId ) {
@@ -63,7 +63,7 @@ public class AppDetails {
     }
 
     @JsonCreator
-    private AppDetails( String appId, String description, String creatorId, AppStatus status ) {
+    protected AppDetails( String appId, String description, String creatorId, AppStatus status ) {
         this.appId = appId;
         this.description = description;
         this.creatorId = creatorId;

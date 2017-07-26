@@ -7,11 +7,19 @@ import akka.stream.javadsl.Source;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.api.event.PreferencesEvent;
 import com.frank.lagomtest.preferences.api.model.App;
+import com.frank.lagomtest.preferences.api.model.BlockContainer;
 import com.frank.lagomtest.preferences.api.values.AppDetails;
 import com.frank.lagomtest.preferences.api.values.CreateAppResult;
+import com.frank.lagomtest.preferences.api.values.FullAppDetails;
+import com.frank.lagomtest.preferences.api.values.FullAppDetails.BlockContainerDetail;
+import com.frank.lagomtest.preferences.api.values.FullAppDetails.FullBuilder;
 import com.frank.lagomtest.preferences.api.PreferencesService;
 import com.frank.lagomtest.preferences.impl.AppCommand.ActivateApp;
+import com.frank.lagomtest.preferences.impl.AppCommand.AddBlockContainer;
+import com.frank.lagomtest.preferences.impl.AppCommand.CancelApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
+import com.frank.lagomtest.preferences.impl.AppCommand.DeactivateApp;
+import com.frank.lagomtest.preferences.impl.AppCommand.RemoveBlockContainer;
 import com.lightbend.lagom.javadsl.broker.TopicProducer;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.lightbend.lagom.javadsl.api.broker.Topic;
@@ -58,20 +66,18 @@ public class PreferencesServiceImpl implements PreferencesService {
         return name -> completedFuture( "echo: " + id );
     }
 
-    @Override
-    public ServiceCall<App, CreateAppResult> createApp( String appId ) {
-        return request ->
-                persistentEntities.refFor( AppEntity.class, appId ).
-                        ask( CreateApp.from( request ) ).
-                        thenApply( createAppDone ->
-                                CreateAppResult.from( appId ) );
-    }
+	@Override
+	public ServiceCall<App, CreateAppResult> createApp( String appId ) {
+		return request -> entityRef( appId ).
+				ask( CreateApp.from( request ) ).
+				thenApply( createAppDone -> CreateAppResult.from( appId ) );
+	}
 
     @Override
-    public ServiceCall<NotUsed, AppDetails> getApp( String appId ) {
+    public ServiceCall<NotUsed, FullAppDetails> getApp( String appId ) {
 
         return request -> {
-            CompletionStage<AppDetails> result =
+            CompletionStage<AppDetails> detail =
                     cassandraSession.selectOne( "SELECT description, creator_id, status " +
                             "FROM appsummary where id = ?", appId ).
                             thenApply( opt -> {
@@ -88,7 +94,21 @@ public class PreferencesServiceImpl implements PreferencesService {
                                     creatorId( row.getString( "creator_id" ) ).
                                     status( AppStatus.valueOf( row.getString( "status" ) ) ).
                                     build() );
-            return result;
+            
+            // TODO: una query con ALLOW FILTERING non è particolarmente efficiente
+            // in quanto c'è il rischio di qualcosa di simile ad un full table scan
+            CompletionStage<List<String>> blockIds = cassandraSession.
+            		selectAll("SELECT id from blockcontainers where app_id=? ALLOW FILTERING", appId).
+            		thenApply( rows -> 
+            			rows.stream().map( row -> row.getString("id") ).collect( Collectors.toList() )
+            		);
+            
+            return detail.thenCombine( blockIds, (aDetail, ids) -> {
+            		FullBuilder builder = FullAppDetails.fullBuilder().appDetails( aDetail );
+            		ids.stream().forEach( id -> builder.add(BlockContainerDetail.from( id ) ) );
+            		return builder.buildFull();
+            });
+           
         };
     }
 
@@ -102,17 +122,39 @@ public class PreferencesServiceImpl implements PreferencesService {
 
     @Override
     public ServiceCall<NotUsed, Done> deactivate( String appId ) {
-        // TODO
-        throw new UnsupportedOperationException( "deactivate() Unsupported" );
+    		throw new UnsupportedOperationException( "Unsupported" );
+    	    // TODO: occorre controllare se appId esiste o no
+//	    	return request -> entityRef( appId ).
+//	                ask( DeactivateApp.build() ).
+//	                thenApply( r -> Done.getInstance() );	
     }
 
     @Override
     public ServiceCall<NotUsed, Done> cancel( String appId ) {
-        // TODO
-        throw new UnsupportedOperationException( "cancel() Unsupported" );
+    		throw new UnsupportedOperationException( "Unsupported" );
+	    	// TODO: occorre controllare se appId esiste o no
+//	    	return request -> entityRef( appId ).
+//	                ask( CancelApp.build() ).
+//	                thenApply( r -> Done.getInstance() );	
     }
+    
+    
 
     @Override
+	public ServiceCall<BlockContainer, Done> addBlockContainer( String appId ) {
+    		return request -> entityRef( appId ).
+                ask( AddBlockContainer.from( request.blockContainerId ) ).
+                thenApply( r -> Done.getInstance() );
+	}
+
+	@Override
+	public ServiceCall<NotUsed, Done> removeBlockContainer( String appId, String blockContainerId ) {
+		return request -> entityRef( appId ).
+                ask( RemoveBlockContainer.from( blockContainerId ) ).
+                thenApply( r -> Done.getInstance() );
+	}
+
+	@Override
     public ServiceCall<NotUsed, PSequence<AppDetails>> getAllApps() {
         return request -> {
             CompletionStage<PSequence<AppDetails>> result =

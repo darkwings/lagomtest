@@ -1,9 +1,7 @@
 package com.frank.lagomtest.preferences.api.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-
-import java.util.Collection;
-import java.util.Collections;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author ftorriani
@@ -12,14 +10,13 @@ import java.util.Collections;
 public class BlockContainer {
 
     public final String blockContainerId;
-    public final Collection<Block> blocks;
+    
 
     @JsonCreator
-    public BlockContainer( String blockContainerId, Collection<Block> blocks ) {
+    private BlockContainer( @JsonProperty("blockContainerId") String blockContainerId ) {
         this.blockContainerId = blockContainerId;
-        this.blocks = Collections.unmodifiableCollection( blocks );
     }
-
+    
     @Override
     public boolean equals( Object o ) {
         if ( this == o ) {
@@ -38,4 +35,10 @@ public class BlockContainer {
     public int hashCode() {
         return blockContainerId != null ? blockContainerId.hashCode() : 0;
     }
+
+	public String getBlockContainerId() {
+		return blockContainerId;
+	}
+    
+    
 }

@@ -20,18 +20,19 @@ public class StreamServiceImpl implements StreamService {
     private final PreferencesService preferencesService;
 
     @Inject
-    public StreamServiceImpl(PreferencesService preferencesService) {
+    public StreamServiceImpl( PreferencesService preferencesService ) {
         this.preferencesService = preferencesService;
     }
 
     @Override
     public ServiceCall<NotUsed, Source<String, NotUsed>> appEvents() {
-        return request -> 
-        		    completedFuture( preferencesService.preferencesTopic().
-        		    		subscribe().atMostOnceSource().map( evt -> {
-        		    			System.out.println( "StreamServiceImpl.appEvents: received event " + evt ); 
-        		    			return evt.getAppId() + " - " + evt.getMessage(); 
-        		    		}) );        
+    		throw new UnsupportedOperationException( "Unsupported" );
+//        return request -> 
+//        		    completedFuture( preferencesService.preferencesTopic().
+//        		    		subscribe().atMostOnceSource().map( evt -> {
+//        		    			System.out.println( "StreamServiceImpl.appEvents: received event " + evt ); 
+//        		    			return evt.getAppId() + " - " + evt.getMessage(); 
+//        		    		}) );        
     }
 
     @Override

@@ -113,7 +113,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public final String appId;
 
         @JsonCreator
-        private AppDeactivated( String appId ) {
+        private AppDeactivated( @JsonProperty("appId") String appId ) {
             this.appId = appId;
         }
 
@@ -140,6 +140,17 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public int hashCode() {
             return appId != null ? appId.hashCode() : 0;
         }
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("AppDeactivated [appId=");
+			builder.append(appId);
+			builder.append("]");
+			return builder.toString();
+		}
+        
+        
     }
 
     @SuppressWarnings("serial")
@@ -152,10 +163,10 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public static AppActivated from( String appId ) {
             Objects.requireNonNull( appId );
             return new AppActivated( appId );
-        }
+        }           
 
-        @JsonCreator
-        private AppActivated( String appId ) {
+		@JsonCreator
+        private AppActivated( @JsonProperty("appId") String appId ) {
             this.appId = appId;
         }
 
@@ -177,6 +188,15 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public int hashCode() {
             return appId != null ? appId.hashCode() : 0;
         }
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("AppActivated [appId=");
+			builder.append(appId);
+			builder.append("]");
+			return builder.toString();
+		}
     }
 
     @SuppressWarnings("serial")
@@ -214,6 +234,16 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public int hashCode() {
             return appId != null ? appId.hashCode() : 0;
         }
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("AppCancelled [appId=");
+			builder.append(appId);
+			builder.append("]");
+			return builder.toString();
+		}
+        
     }
 
 
@@ -278,6 +308,19 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public int hashCode() {
             return blockContainerId != null ? blockContainerId.hashCode() : 0;
         }
+
+		@Override
+		public String toString() {
+			StringBuilder builder2 = new StringBuilder();
+			builder2.append("BlockContainerAdded [blockContainerId=");
+			builder2.append(blockContainerId);
+			builder2.append(", appId=");
+			builder2.append(appId);
+			builder2.append("]");
+			return builder2.toString();
+		}
+        
+        
     }
 
     @SuppressWarnings("serial")
@@ -342,5 +385,18 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public int hashCode() {
             return blockContainerId != null ? blockContainerId.hashCode() : 0;
         }
+
+		@Override
+		public String toString() {
+			StringBuilder builder2 = new StringBuilder();
+			builder2.append("BlockContainerRemoved [blockContainerId=");
+			builder2.append(blockContainerId);
+			builder2.append(", appId=");
+			builder2.append(appId);
+			builder2.append("]");
+			return builder2.toString();
+		}
+        
+        
     }
 }
