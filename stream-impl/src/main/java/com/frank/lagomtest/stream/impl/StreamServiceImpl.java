@@ -8,6 +8,8 @@ import akka.stream.javadsl.Source;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.frank.lagomtest.stream.api.StreamService;
 import com.frank.lagomtest.preferences.api.PreferencesService;
+import com.frank.lagomtest.preferences.api.event.PreferencesEvent;
+
 import javax.inject.Inject;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -25,12 +27,15 @@ public class StreamServiceImpl implements StreamService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ServiceCall<NotUsed, Source<String, NotUsed>> appEvents() {
-        return request -> 
-        		    completedFuture( preferencesService.preferencesTopic().
-        		    		subscribe().atMostOnceSource().map( evt ->  
+        return request -> {
+					Source<PreferencesEvent, NotUsed> source = (Source<PreferencesEvent, NotUsed>) 
+        		    		preferencesService.preferencesTopic().subscribe().atMostOnceSource();
+					return completedFuture( source.map( evt ->  
         		    			evt.getAppId() + " - " + evt.getMessage() 
-        		    		) );        
+        		    ) );
+        };
     }
 
     @Override
