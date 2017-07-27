@@ -18,6 +18,8 @@ import java.util.concurrent.CompletionStage;
 import static com.lightbend.lagom.javadsl.persistence.cassandra.CassandraReadSide.completedStatements;
 
 /**
+ * Al momento è spento
+ * 
  * @author ftorriani
  */
 public class AppEventProcessor extends ReadSideProcessor<AppEvent> {

@@ -17,6 +17,8 @@
         <module>preferences-api</module>
         <module>preferences-impl</module>
         <module>integration-tests</module>
+        <module>preferences-query-api</module>
+        <module>preferences-query-impl</module>
     </modules>
 
     <build>

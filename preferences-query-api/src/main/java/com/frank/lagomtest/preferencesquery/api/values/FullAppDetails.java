@@ -1,4 +1,4 @@
-package com.frank.lagomtest.preferences.api.values;
+package com.frank.lagomtest.preferencesquery.api.values;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,7 +7,6 @@ import java.util.Objects;
 import javax.annotation.concurrent.Immutable;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.frank.lagomtest.preferences.api.AppStatus;
 
 @Immutable
 public final class FullAppDetails extends AppDetails {
@@ -61,14 +60,14 @@ public final class FullAppDetails extends AppDetails {
 		}
 
 		public FullAppDetails buildFull() {
-			return new FullAppDetails(appId, description, creatorId, status, blockContainers);
+			return new FullAppDetails( appId, description, creatorId, status, blockContainers );
 		}
 	}
 	
 	
 	@JsonCreator
 	private FullAppDetails( String appId, String description, String creatorId, 
-			AppStatus status, List<BlockContainerDetail> blockContainers ) {
+			String status, List<BlockContainerDetail> blockContainers ) {
 		super( appId, description, creatorId, status );
 		this.blockContainers = blockContainers;
 	}

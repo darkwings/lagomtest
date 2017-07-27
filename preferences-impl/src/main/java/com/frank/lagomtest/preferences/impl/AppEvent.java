@@ -31,11 +31,29 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
     //#sharded-tags
 
+    public String getAppId();
+    
+    public String getEventName();
+    
+    @SuppressWarnings("serial")
+    abstract class AbstractAppEvent implements AppEvent {
+    		public final String appId;
+
+		public AbstractAppEvent(String appId) {
+			super();
+			Objects.requireNonNull( appId ); 
+			this.appId = appId;
+		}
+
+		public String getAppId() {
+			return appId;
+		}
+    }
+    
     @SuppressWarnings("serial")
     @Immutable
     @JsonDeserialize
-    class AppCreated implements AppEvent {
-        public final String appId;
+    class AppCreated extends AbstractAppEvent {     
         public final App app;
 
         public static class Builder {
@@ -59,16 +77,21 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
                 return new AppCreated( appId, app );
             }
         }
+        
 
-        public static Builder builder() {
+        @Override
+		public String getEventName() {
+			return "AppCreated";
+		}
+
+		public static Builder builder() {
             return new Builder();
         }
 
         @JsonCreator
         private AppCreated( @JsonProperty("appId") String appId, @JsonProperty("app") App app ) {
-            Objects.requireNonNull( appId );
-            Objects.requireNonNull( app );
-            this.appId = appId;
+        		super( appId );           
+            Objects.requireNonNull( app );           
             this.app = app;
         }
 
@@ -108,12 +131,13 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     @SuppressWarnings("serial")
     @Immutable
     @JsonDeserialize
-    class AppDeactivated implements AppEvent {
+    class AppDeactivated extends AbstractAppEvent {
 
         public final String appId;
 
         @JsonCreator
         private AppDeactivated( @JsonProperty("appId") String appId ) {
+        		super( appId );
             this.appId = appId;
         }
 
@@ -121,6 +145,11 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
             Objects.requireNonNull( appId );
             return new AppDeactivated( appId );
         }
+        
+        @Override
+		public String getEventName() {
+			return "AppDeactivated";
+		}
 
         @Override
         public boolean equals( Object o ) {
@@ -156,7 +185,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     @SuppressWarnings("serial")
     @Immutable
     @JsonDeserialize
-    class AppActivated implements AppEvent {
+    class AppActivated extends AbstractAppEvent {
 
         public final String appId;
 
@@ -167,8 +196,14 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
 		@JsonCreator
         private AppActivated( @JsonProperty("appId") String appId ) {
+			super( appId );
             this.appId = appId;
         }
+		
+		@Override
+		public String getEventName() {
+			return "AppActivated";
+		}
 
         @Override
         public boolean equals( Object o ) {
@@ -202,12 +237,13 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     @SuppressWarnings("serial")
     @Immutable
     @JsonDeserialize
-    class AppCancelled implements AppEvent {
+    class AppCancelled extends AbstractAppEvent {
 
         public final String appId;
 
         @JsonCreator
         private AppCancelled( String appId ) {
+        	    super( appId );
             this.appId = appId;
         }
 
@@ -215,6 +251,11 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
             Objects.requireNonNull( appId );
             return new AppCancelled( appId );
         }
+        
+        @Override
+		public String getEventName() {
+			return "AppCancelled";
+		}
 
         @Override
         public boolean equals( Object o ) {
@@ -250,18 +291,18 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     @SuppressWarnings("serial")
     @Immutable
     @JsonDeserialize
-    class BlockContainerAdded implements AppEvent {
+    class BlockContainerAdded extends AbstractAppEvent {
 
         public final String blockContainerId;
-        public final String appId;
+       
 
         @JsonCreator
-        private BlockContainerAdded( @JsonProperty("appId") String appId, @JsonProperty("blockContainerId") String blockContainerId ) {
-            Objects.requireNonNull( appId );
-            Objects.requireNonNull( blockContainerId );
-            this.appId = appId;
+        private BlockContainerAdded( @JsonProperty("appId") String appId, 
+        								@JsonProperty("blockContainerId") String blockContainerId ) {
+            super( appId );
+            Objects.requireNonNull( blockContainerId );           
             this.blockContainerId = blockContainerId;
-        }
+        }                
 
         public static class Builder {
             private String blockContainerId;
@@ -280,7 +321,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
                 return this;
             }
 
-            BlockContainerAdded build() {
+            public BlockContainerAdded build() {
                 return new BlockContainerAdded( appId, blockContainerId );
             }
         }
@@ -288,6 +329,11 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
         public static Builder builder() {
             return new Builder();
         }
+        
+        @Override
+		public String getEventName() {
+			return "BlockContainerAdded";
+		}
 
         @Override
         public boolean equals( Object o ) {
@@ -326,10 +372,9 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     @SuppressWarnings("serial")
     @Immutable
     @JsonDeserialize
-    class BlockContainerRemoved implements AppEvent {
+    class BlockContainerRemoved extends AbstractAppEvent {
 
-        public final String blockContainerId;
-        public final String appId;
+        public final String blockContainerId;        
 
         public static class Builder {
             private String blockContainerId;
@@ -348,7 +393,7 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
                 return this;
             }
 
-            BlockContainerRemoved build() {
+            public BlockContainerRemoved build() {
                 return new BlockContainerRemoved( appId, blockContainerId );
             }
         }
@@ -359,12 +404,15 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
         @JsonCreator
         private BlockContainerRemoved( @JsonProperty("appId") String appId, @JsonProperty("blockContainerId") String blockContainerId ) {
-            Objects.requireNonNull( appId );
+            super( appId );
             Objects.requireNonNull( blockContainerId );
-            this.appId = appId;
             this.blockContainerId = blockContainerId;
         }
 
+        @Override
+		public String getEventName() {
+			return "BlockContainerRemoved";
+		}
 
         @Override
         public boolean equals( Object o ) {
@@ -395,8 +443,6 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 			builder2.append(appId);
 			builder2.append("]");
 			return builder2.toString();
-		}
-        
-        
+		}        
     }
 }

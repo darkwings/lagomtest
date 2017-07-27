@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>preferences-api</artifactId>
+    <artifactId>preferences-query-api</artifactId>
 
     <packaging>jar</packaging>
 
@@ -18,6 +18,5 @@
             <groupId>com.lightbend.lagom</groupId>
             <artifactId>lagom-javadsl-api_2.11</artifactId>
         </dependency>
-        
     </dependencies>
 </project>

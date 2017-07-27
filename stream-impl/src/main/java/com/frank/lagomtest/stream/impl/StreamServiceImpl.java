@@ -33,8 +33,8 @@ public class StreamServiceImpl implements StreamService {
 					Source<PreferencesEvent, NotUsed> source = (Source<PreferencesEvent, NotUsed>) 
         		    		preferencesService.preferencesTopic().subscribe().atMostOnceSource();
 					return completedFuture( source.map( evt ->  
-        		    			evt.getAppId() + " - " + evt.getMessage() 
-        		    ) );
+        		    			evt.toString() 
+					) );
         };
     }
 

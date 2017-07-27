@@ -4,37 +4,24 @@ import akka.Done;
 import akka.NotUsed;
 import akka.japi.Pair;
 import akka.stream.javadsl.Source;
-import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.api.event.PreferencesEvent;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.model.BlockContainer;
-import com.frank.lagomtest.preferences.api.values.AppDetails;
 import com.frank.lagomtest.preferences.api.values.CreateAppResult;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails.BlockContainerDetail;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails.FullBuilder;
 import com.frank.lagomtest.preferences.api.PreferencesService;
 import com.frank.lagomtest.preferences.impl.AppCommand.ActivateApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.AddBlockContainer;
-import com.frank.lagomtest.preferences.impl.AppCommand.CancelApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
-import com.frank.lagomtest.preferences.impl.AppCommand.DeactivateApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.RemoveBlockContainer;
 import com.lightbend.lagom.javadsl.broker.TopicProducer;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.lightbend.lagom.javadsl.api.broker.Topic;
-import com.lightbend.lagom.javadsl.api.transport.NotFound;
 import com.lightbend.lagom.javadsl.persistence.*;
 import com.lightbend.lagom.javadsl.persistence.cassandra.CassandraSession;
-import org.pcollections.PSequence;
-import org.pcollections.TreePVector;
 
 import javax.inject.Inject;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -50,15 +37,16 @@ public class PreferencesServiceImpl implements PreferencesService {
     private final ReadSide readSide;
 
     @Inject
-    public PreferencesServiceImpl( PersistentEntityRegistry persistentEntities,
-                                   ReadSide readSide,
-                                   CassandraSession cassandraSession ) {
+    public PreferencesServiceImpl( PersistentEntityRegistry persistentEntities, 
+    				CassandraSession cassandraSession, ReadSide readSide ) {
         this.persistentEntities = persistentEntities;
         this.cassandraSession = cassandraSession;
         this.readSide = readSide;
 
         persistentEntities.register( AppEntity.class );
-        readSide.register( AppEventProcessor.class );
+        
+        // Al momento spegnamo il processor locale
+//        readSide.register( AppEventProcessor.class );
     }
 
     @Override
@@ -73,46 +61,7 @@ public class PreferencesServiceImpl implements PreferencesService {
 				thenApply( createAppDone -> CreateAppResult.from( appId ) );
 	}
 
-    @Override
-    public ServiceCall<NotUsed, FullAppDetails> getApp( String appId ) {
-
-        return request -> {
-            CompletionStage<AppDetails> detail =
-                    cassandraSession.selectOne( "SELECT description, creator_id, status " +
-                            "FROM appsummary where id = ?", appId ).
-                            thenApply( opt -> {
-                                if ( opt.isPresent() ) {
-                                    return opt.get();
-                                }
-                                else {
-                                    throw new NotFound( "app " + appId + " not found" );
-                                }
-                            } ).
-                            thenApply( row -> AppDetails.builder().
-                                    appId( appId ).
-                                    description( row.getString( "description" ) ).
-                                    creatorId( row.getString( "creator_id" ) ).
-                                    status( AppStatus.valueOf( row.getString( "status" ) ) ).
-                                    build() );
-            
-            // TODO: una query con ALLOW FILTERING non è particolarmente efficiente
-            // in quanto c'è il rischio di qualcosa di simile ad un full table scan
-            CompletionStage<List<String>> blockIds = cassandraSession.
-            		selectAll("SELECT id from blockcontainers where app_id=? ALLOW FILTERING", appId).
-            		thenApply( rows -> 
-            			rows.stream().map( row -> row.getString("id") ).collect( Collectors.toList() )
-            		);
-            
-            return detail.thenCombine( blockIds, (aDetail, ids) -> {
-            		FullBuilder builder = FullAppDetails.fullBuilder().appDetails( aDetail );
-            		ids.stream().forEach( id -> builder.add(BlockContainerDetail.from( id ) ) );
-            		return builder.buildFull();
-            });
-           
-        };
-    }
-
-    @Override
+	@Override
     public ServiceCall<NotUsed, Done> activate( String appId ) {
         // TODO: occorre controllare se appId esiste o no
         return request -> entityRef( appId ).
@@ -137,16 +86,14 @@ public class PreferencesServiceImpl implements PreferencesService {
 //	                ask( CancelApp.build() ).
 //	                thenApply( r -> Done.getInstance() );	
     }
-    
-    
-
+	
     @Override
 	public ServiceCall<BlockContainer, Done> addBlockContainer( String appId ) {
     		return request -> entityRef( appId ).
                 ask( AddBlockContainer.from( request.blockContainerId ) ).
                 thenApply( r -> Done.getInstance() );
 	}
-
+    
 	@Override
 	public ServiceCall<NotUsed, Done> removeBlockContainer( String appId, String blockContainerId ) {
 		return request -> entityRef( appId ).
@@ -154,25 +101,7 @@ public class PreferencesServiceImpl implements PreferencesService {
                 thenApply( r -> Done.getInstance() );
 	}
 
-	@Override
-    public ServiceCall<NotUsed, PSequence<AppDetails>> getAllApps() {
-        return request -> {
-            CompletionStage<PSequence<AppDetails>> result =
-                    cassandraSession.selectAll( "SELECT id, description, creator_id, status FROM appsummary" ).
-                            thenApply( rows -> {
-                                List<AppDetails> details = rows.stream().
-                                        map( row -> AppDetails.builder().
-                                                appId( row.getString( "id" ) ).
-                                                description( row.getString( "description" ) ).
-                                                creatorId( row.getString( "creator_id" ) ).
-                                                status( AppStatus.valueOf( row.getString( "status" ) ) ).
-                                                build() ).
-                                        collect( Collectors.toList() );
-                                return TreePVector.from( details );
-                            } );
-            return result;
-        };
-    }
+	
 
     /**
      * Permette di ottenere il riferimento ad una entity
@@ -194,18 +123,18 @@ public class PreferencesServiceImpl implements PreferencesService {
 
     private Source<Pair<PreferencesEvent, Offset>, ?> streamForTag( AggregateEventTag<AppEvent> tag, Offset offset ) {
 
-        // Converto l'evento AppCreated in PreferencesMessage
+        // Converto l'evento AppCreated in PreferencesEvent
         return persistentEntities.eventStream( tag, offset ).
-                filter( evtOffset -> evtOffset.first() instanceof AppEvent.AppCreated ).
+                filter( evtOffset -> evtOffset.first() instanceof AppEvent ).
                 mapAsync( 1, evtOffset -> {
-                    AppEvent.AppCreated appCreated = (AppEvent.AppCreated) evtOffset.first();
+                    AppEvent appEvent = (AppEvent) evtOffset.first();
 
-                    System.out.println( "PreferencesServiceImpl.streamForTag: pushing AppCreated to topic: " + appCreated );
+                    System.out.println( "PreferencesServiceImpl.streamForTag: pushing AppEvent to topic: " + appEvent.getEventName() );
                     
                     return CompletableFuture.completedFuture(
                             Pair.create( PreferencesEvent.builder().
-                                            appId( appCreated.appId ).
-                                            message( "App created" ).
+                                            appId( appEvent.getAppId() ).
+                                            message( appEvent.getEventName() ).
                                             build(),
                                     evtOffset.second() ) );
                 } );

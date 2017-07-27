@@ -16,9 +16,9 @@ public class StreamModule extends AbstractModule implements ServiceGuiceSupport 
   @Override
   protected void configure() {
     // Bind the StreamService service
-    bindService(StreamService.class, StreamServiceImpl.class);
+    bindService( StreamService.class, StreamServiceImpl.class );
     
     // Bind the PreferencesService client
-    bindClient(PreferencesService.class);
+    bindClient( PreferencesService.class );
   }
 }

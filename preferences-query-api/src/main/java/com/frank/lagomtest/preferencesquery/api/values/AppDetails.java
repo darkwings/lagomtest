@@ -1,9 +1,6 @@
-package com.frank.lagomtest.preferences.api.values;
-
+package com.frank.lagomtest.preferencesquery.api.values;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.frank.lagomtest.preferences.api.model.App;
-import com.frank.lagomtest.preferences.api.AppStatus;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -16,13 +13,13 @@ public class AppDetails {
     public final String appId;
     public final String description;
     public final String creatorId;
-    public final AppStatus status;
+    public final String status;
 
     public static class Builder {
         protected String appId;
         protected String description;
         protected String creatorId;
-        protected AppStatus status;
+        protected String status;
 
         protected Builder() {
         }
@@ -42,13 +39,7 @@ public class AppDetails {
             return this;
         }
 
-        public Builder app( App app ) {
-            this.description = app.getDescription();
-            this.creatorId = app.getCreatorId();
-            return this;
-        }
-
-        public Builder status( AppStatus status ) {
+        public Builder status( String status ) {
             this.status = status;
             return this;
         }
@@ -63,7 +54,7 @@ public class AppDetails {
     }
 
     @JsonCreator
-    protected AppDetails( String appId, String description, String creatorId, AppStatus status ) {
+    protected AppDetails( String appId, String description, String creatorId, String status ) {
         this.appId = appId;
         this.description = description;
         this.creatorId = creatorId;
@@ -82,7 +73,7 @@ public class AppDetails {
         return creatorId;
     }
 
-    public AppStatus getStatus() {
+    public String getStatus() {
         return status;
     }
 }

@@ -4,7 +4,6 @@ import akka.Done;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.impl.AppCommand.*;
-import com.frank.lagomtest.preferences.impl.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 
 import java.util.Optional;
@@ -60,7 +59,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         addCreateAppCommandHandler( builder );
         addGetAppCommandHandler( builder );
         builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, AppActivated.from( entityId() ) ) );
+                persistAndDone( ctx, AppEvent.AppActivated.from( entityId() ) ) );
 
         builder.setReadOnlyCommandHandler( DeactivateApp.class, this::notValid );
         builder.setReadOnlyCommandHandler( CancelApp.class, this::notValid );
@@ -68,13 +67,13 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::notValid );
 
 
-        builder.setEventHandler( AppCreated.class,
+        builder.setEventHandler( AppEvent.AppCreated.class,
                 event -> AppState.builder().
                         app( event.app ).
                         status( AppStatus.DRAFT ).
                         build() );
 
-        builder.setEventHandlerChangingBehavior( AppActivated.class, event ->
+        builder.setEventHandlerChangingBehavior( AppEvent.AppActivated.class, event ->
                 active( AppState.builder( state() ).
                         status( ACTIVE ).
                         build() ) );
@@ -91,23 +90,23 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         addGetAppCommandHandler( builder );
 
         builder.setCommandHandler( AddBlockContainer.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, BlockContainerAdded.builder().
+                persistAndDone( ctx, AppEvent.BlockContainerAdded.builder().
                         appId( entityId() ).
                         blockContainerId( cmd.blockContainerId ).
                         build() ) );
         builder.setCommandHandler( RemoveBlockContainer.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, BlockContainerRemoved.builder().
+                persistAndDone( ctx, AppEvent.BlockContainerRemoved.builder().
                         appId( entityId() ).
                         blockContainerId( cmd.blockContainerId ).
                         build() ) );
 
         builder.setCommandHandler( DeactivateApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, AppDeactivated.from( entityId() ) ) );
+                persistAndDone( ctx, AppEvent.AppDeactivated.from( entityId() ) ) );
 
         builder.setReadOnlyCommandHandler( ActivateApp.class, this::notValid );
         builder.setReadOnlyCommandHandler( CancelApp.class, this::notValid );
 
-        builder.setEventHandlerChangingBehavior( AppDeactivated.class, d ->
+        builder.setEventHandlerChangingBehavior( AppEvent.AppDeactivated.class, d ->
                 inactive( AppState.builder( state() ).
                         status( AppStatus.INACTIVE ).
                         build() ) );
@@ -127,15 +126,15 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::notValid );
 
         builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, AppActivated.from( entityId() ) ) );
+                persistAndDone( ctx, AppEvent.AppActivated.from( entityId() ) ) );
         builder.setCommandHandler( CancelApp.class, ( cmd, ctx ) ->
-                persistAndDone( ctx, AppCancelled.from( entityId() ) ) );
+                persistAndDone( ctx, AppEvent.AppCancelled.from( entityId() ) ) );
 
-        builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
+        builder.setEventHandlerChangingBehavior( AppEvent.AppActivated.class, d ->
                 active( AppState.builder( state () ).
                         status( ACTIVE ).
                         build() ) );
-        builder.setEventHandlerChangingBehavior( AppCancelled.class, d ->
+        builder.setEventHandlerChangingBehavior( AppEvent.AppCancelled.class, d ->
                 cancelled( AppState.builder( state() ).
                         status( CANCELLED ).
                         build() ) );
@@ -168,7 +167,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 return ctx.done();
             }
             else {           
-                    return ctx.thenPersist( AppCreated.builder().
+                    return ctx.thenPersist( AppEvent.AppCreated.builder().
                                     appId( entityId() ).
                                     app( cmd.app ).
                                     build(),
