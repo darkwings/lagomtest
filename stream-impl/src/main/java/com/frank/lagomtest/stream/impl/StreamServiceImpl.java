@@ -26,13 +26,11 @@ public class StreamServiceImpl implements StreamService {
 
     @Override
     public ServiceCall<NotUsed, Source<String, NotUsed>> appEvents() {
-//    		throw new UnsupportedOperationException( "Unsupported" );
         return request -> 
         		    completedFuture( preferencesService.preferencesTopic().
-        		    		subscribe().atMostOnceSource().map( evt -> {
-        		    			System.out.println( "StreamServiceImpl.appEvents: received event " + evt ); 
-        		    			return evt.getAppId() + " - " + evt.getMessage(); 
-        		    		}) );        
+        		    		subscribe().atMostOnceSource().map( evt ->  
+        		    			evt.getAppId() + " - " + evt.getMessage() 
+        		    		) );        
     }
 
     @Override
