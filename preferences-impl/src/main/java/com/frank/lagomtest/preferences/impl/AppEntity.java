@@ -6,6 +6,8 @@ import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.impl.AppCommand.*;
 import com.frank.lagomtest.preferences.impl.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -19,11 +21,13 @@ import static com.frank.lagomtest.preferences.api.AppStatus.CANCELLED;
  */
 public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> {
 
+    private final Logger log = LoggerFactory.getLogger( AppEntity.class );
+
     @Override
     public Behavior initialBehavior( Optional<AppState> snapshot ) {
         Behavior b;
         if ( snapshot.isPresent() ) {
-        		System.out.println( "AppEntity.initialBehavior: Snapshot is present" );
+            log.info( "AppEntity.initialBehavior: Snapshot is present" );
             AppState state = snapshot.get();
             switch ( state.status ) {
                 case DRAFT:
@@ -43,7 +47,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
             }
         }
         else {
-        	    System.out.println( "AppEntity.initialBehavior: Snapshot is NOT present" );
+            log.info( "AppEntity.initialBehavior: Snapshot is NOT present" );
             b = draft( AppState.builder().
                     app( App.empty() ).
                     build() );
@@ -54,7 +58,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
     private Behavior draft( AppState state ) {
 
-        System.out.println( "AppEntity: ===== DRAFT =====" );
+        log.info( "AppEntity {}: ===== DRAFT =====", entityId() );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -84,7 +88,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
     private Behavior active( AppState state ) {
 
-        System.out.println( "AppEntity: ===== ACTIVE =====" );
+        log.info( "AppEntity {}: ===== ACTIVE =====", entityId() );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -111,13 +115,13 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 inactive( AppState.builder( state() ).
                         status( AppStatus.INACTIVE ).
                         build() ) );
-      
+
         return builder.build();
     }
 
     private Behavior inactive( AppState state ) {
 
-        System.out.println( "AppEntity: ===== INACTIVE =====" );
+        log.info( "AppEntity {}: ===== INACTIVE =====", entityId() );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -132,7 +136,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 persistAndDone( ctx, AppCancelled.from( entityId() ) ) );
 
         builder.setEventHandlerChangingBehavior( AppActivated.class, d ->
-                active( AppState.builder( state () ).
+                active( AppState.builder( state() ).
                         status( ACTIVE ).
                         build() ) );
         builder.setEventHandlerChangingBehavior( AppCancelled.class, d ->
@@ -144,7 +148,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     }
 
     private Behavior cancelled( AppState state ) {
-        System.out.println( "AppEntity: ===== CANCELLED =====" );
+        log.info( "AppEntity {}: ===== CANCELLED =====", entityId() );
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
@@ -167,12 +171,12 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
                 ctx.invalidCommand( "App " + entityId() + " cannot be created" );
                 return ctx.done();
             }
-            else {           
-                    return ctx.thenPersist( AppCreated.builder().
-                                    appId( entityId() ).
-                                    app( cmd.app ).
-                                    build(),
-                            aCrt -> ctx.reply( CreateAppDone.from( entityId() ) ) );               
+            else {
+                return ctx.thenPersist( AppCreated.builder().
+                                appId( entityId() ).
+                                app( cmd.app ).
+                                build(),
+                        aCrt -> ctx.reply( CreateAppDone.from( entityId() ) ) );
             }
         } );
     }
@@ -182,7 +186,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( GetApp.class, ( cmd, ctx ) -> {
             ctx.reply( GetAppReply.builder().
                     app( state().app ).
-                    status(state().status ).
+                    status( state().status ).
                     build() );
         } );
     }

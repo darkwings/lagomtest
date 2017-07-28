@@ -26,6 +26,8 @@ import com.lightbend.lagom.javadsl.persistence.*;
 import com.lightbend.lagom.javadsl.persistence.cassandra.CassandraSession;
 import org.pcollections.PSequence;
 import org.pcollections.TreePVector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
@@ -40,6 +42,8 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * @author ftorriani
  */
 public class PreferencesServiceImpl implements PreferencesService {
+
+    private final Logger log = LoggerFactory.getLogger( PreferencesServiceImpl.class );
 
     private final PersistentEntityRegistry persistentEntities;
 
@@ -196,8 +200,8 @@ public class PreferencesServiceImpl implements PreferencesService {
         return persistentEntities.eventStream( tag, offset ).
                 filter( evtOffset -> evtOffset.first() instanceof AppEvent.AppCreated ).
                 mapAsync( 1, evtOffset -> {
-                    AppEvent appEvent = (AppEvent) evtOffset.first();
-                    System.out.println( "PreferencesServiceImpl.streamForTag: pushing AppEvent to topic: " + appEvent );                   
+                    AppEvent appEvent = evtOffset.first();
+                    log.info( "PreferencesServiceImpl.streamForTag: pushing AppEvent to topic: {}", appEvent );
                     return CompletableFuture.completedFuture(
                             Pair.create( PreferencesEvent.builder().
                                             appId( appEvent.getAppId() ).

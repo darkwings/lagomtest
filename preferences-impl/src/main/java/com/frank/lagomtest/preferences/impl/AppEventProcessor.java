@@ -16,31 +16,36 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static com.lightbend.lagom.javadsl.persistence.cassandra.CassandraReadSide.completedStatements;
 
 /**
  * @author ftorriani
  */
 public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
-    
-	private static final AtomicInteger COUNTER = new AtomicInteger(0);
-    
-	public static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
+
+    private final Logger log = LoggerFactory.getLogger( AppEventProcessor.class );
+
+    private static final AtomicInteger COUNTER = new AtomicInteger( 0 );
+
+    private static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
             "id TEXT, description TEXT, creator_id TEXT, status TEXT, PRIMARY KEY (id))";
 
-    public static final String CREATE_BLOCKCONTAINERS = "CREATE TABLE IF NOT EXISTS blockcontainers ( " +
+    private static final String CREATE_BLOCKCONTAINERS = "CREATE TABLE IF NOT EXISTS blockcontainers ( " +
             "id TEXT, app_id TEXT, PRIMARY KEY (id))";
 
-    public static final String INSERT_INTO_APPSUMMARY = "INSERT INTO appsummary " +
+    private static final String INSERT_INTO_APPSUMMARY = "INSERT INTO appsummary " +
             "(id, description, creator_id, status) " +
             "VALUES (?, ?, ?, ?)";
 
-    public static final String UPDATE_APPSUMMARY = "UPDATE appsummary set status=? where id=?";
+    private static final String UPDATE_APPSUMMARY = "UPDATE appsummary set status=? where id=?";
 
-    public static final String INSERT_INTO_BLOCKCONTAINERS = "INSERT INTO blockcontainers (id, app_id) " +
+    private static final String INSERT_INTO_BLOCKCONTAINERS = "INSERT INTO blockcontainers (id, app_id) " +
             "VALUES (?, ?)";
 
-    public static final String DELETE_FROM_BLOCKCONTAINERS = "DELETE FROM blockcontainers where id = ?";
+    private static final String DELETE_FROM_BLOCKCONTAINERS = "DELETE FROM blockcontainers where id = ?";
 
     private final CassandraSession session;
     private final CassandraReadSide readSide;
@@ -80,10 +85,10 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
 
     private CompletionStage<Done> prepareWriteApp() {
         return session.prepare( INSERT_INTO_APPSUMMARY )
-                        .thenApply( ps -> {
-                            this.writeApp = ps;
-                            return Done.getInstance();
-                        } ).
+                .thenApply( ps -> {
+                    this.writeApp = ps;
+                    return Done.getInstance();
+                } ).
                         thenCompose( d -> session.prepare( UPDATE_APPSUMMARY ) ).
                         thenApply( ps -> {
                             this.updateStatusApp = ps;
@@ -103,15 +108,14 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppCreated( AppEvent.AppCreated event ) {
-    	
-    	// Simuliamo un fallimento temporaneo del servizio
-    	int i = COUNTER.incrementAndGet();
-    	if (i < 2) {
-    		throw new RuntimeException("Beccati questa!!!");
-    	}
-    	System.out.println();
-    	System.out.println( "AppEventProcessor.processAppCreated -> " + event );
-    	
+
+        // Simuliamo un fallimento temporaneo del servizio
+        int i = COUNTER.incrementAndGet();
+        if ( i < 2 ) {
+            throw new RuntimeException( "Beccati questa!!!" );
+        }
+        log.info( "AppEventProcessor.processAppCreated -> {}", event );
+
         BoundStatement bindWriteApp = writeApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "description", event.app.getDescription() );
@@ -121,8 +125,8 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppActivated( AppEvent.AppActivated event ) {
-    	
-    	
+
+        log.info( "AppEventProcessor.processAppActivated -> {}", event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.ACTIVE.name() );
@@ -130,7 +134,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppDeactivated( AppEvent.AppDeactivated event ) {
-    	    System.out.println( "AppEventProcessor.processAppDeactivated -> " + event );
+        log.info( "AppEventProcessor.processAppDeactivated -> {}", event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.INACTIVE.name() );
@@ -138,7 +142,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppCancelled( AppEvent.AppCancelled event ) {
-       	System.out.println( "AppEventProcessor.processAppCancelled -> " + event );
+        log.info( "AppEventProcessor.processAppCancelled -> {}", event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.CANCELLED.name() );
@@ -146,7 +150,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processBlockContainerAdded( AppEvent.BlockContainerAdded event ) {
-      	System.out.println( "AppEventProcessor.processBlockContainerAdded -> " + event );
+        log.info( "AppEventProcessor.processBlockContainerAdded -> {}", event );
         BoundStatement bindWriteApp = writeBlockContainer.bind();
         bindWriteApp.setString( "id", event.blockContainerId );
         bindWriteApp.setString( "app_id", event.appId );
@@ -154,7 +158,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processBlockContainerRemoved( AppEvent.BlockContainerRemoved event ) {
-    	    System.out.println( "AppEventProcessor.processBlockContainerRemoved -> " + event );
+        log.info( "AppEventProcessor.processBlockContainerRemoved -> ", event );
         BoundStatement bindWriteApp = deleteBlockContainer.bind();
         bindWriteApp.setString( "id", event.blockContainerId );
         return completedStatements( Arrays.asList( bindWriteApp ) );
