@@ -27,7 +27,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
     public Behavior initialBehavior( Optional<AppState> snapshot ) {
         Behavior b;
         if ( snapshot.isPresent() ) {
-            log.info( "AppEntity.initialBehavior: Snapshot is present" );
+            log.info( "AppEntity {}: snapshot is present", entityId() );
             AppState state = snapshot.get();
             switch ( state.status ) {
                 case DRAFT:
@@ -47,7 +47,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
             }
         }
         else {
-            log.info( "AppEntity.initialBehavior: Snapshot is NOT present" );
+            log.info( "AppEntity {}: snapshot is NOT present", entityId() );
             b = draft( AppState.builder().
                     app( App.empty() ).
                     build() );

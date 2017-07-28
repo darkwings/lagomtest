@@ -112,9 +112,9 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
         // Simuliamo un fallimento temporaneo del servizio
         int i = COUNTER.incrementAndGet();
         if ( i < 2 ) {
-            throw new RuntimeException( "Beccati questa!!!" );
+            throw new RuntimeException( "Catch this!!!" );
         }
-        log.info( "AppEventProcessor.processAppCreated -> {}", event );
+        log.info( "processAppCreated -> {}", event );
 
         BoundStatement bindWriteApp = writeApp.bind();
         bindWriteApp.setString( "id", event.appId );
@@ -126,7 +126,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
 
     private CompletionStage<List<BoundStatement>> processAppActivated( AppEvent.AppActivated event ) {
 
-        log.info( "AppEventProcessor.processAppActivated -> {}", event );
+        log.info( "processAppActivated -> {}", event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.ACTIVE.name() );
@@ -134,7 +134,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppDeactivated( AppEvent.AppDeactivated event ) {
-        log.info( "AppEventProcessor.processAppDeactivated -> {}", event );
+        log.info( "processAppDeactivated -> {}", event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.INACTIVE.name() );
@@ -142,7 +142,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppCancelled( AppEvent.AppCancelled event ) {
-        log.info( "AppEventProcessor.processAppCancelled -> {}", event );
+        log.info( "processAppCancelled -> {}", event );
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.CANCELLED.name() );
@@ -150,7 +150,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processBlockContainerAdded( AppEvent.BlockContainerAdded event ) {
-        log.info( "AppEventProcessor.processBlockContainerAdded -> {}", event );
+        log.info( "processBlockContainerAdded -> {}", event );
         BoundStatement bindWriteApp = writeBlockContainer.bind();
         bindWriteApp.setString( "id", event.blockContainerId );
         bindWriteApp.setString( "app_id", event.appId );
@@ -158,7 +158,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processBlockContainerRemoved( AppEvent.BlockContainerRemoved event ) {
-        log.info( "AppEventProcessor.processBlockContainerRemoved -> ", event );
+        log.info( "processBlockContainerRemoved -> ", event );
         BoundStatement bindWriteApp = deleteBlockContainer.bind();
         bindWriteApp.setString( "id", event.blockContainerId );
         return completedStatements( Arrays.asList( bindWriteApp ) );

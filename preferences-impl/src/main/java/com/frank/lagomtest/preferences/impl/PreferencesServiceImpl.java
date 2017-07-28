@@ -97,7 +97,7 @@ public class PreferencesServiceImpl implements PreferencesService {
                                     status( AppStatus.valueOf( row.getString( "status" ) ) ).
                                     build() );
             
-            // TODO: una query con ALLOW FILTERING non è particolarmente efficiente
+            // FIXME: una query con ALLOW FILTERING non è particolarmente efficiente
             // in quanto c'è il rischio di qualcosa di simile ad un full table scan
             CompletionStage<List<String>> blockIds = cassandraSession.
             		selectAll("SELECT id from blockcontainers where app_id=? ALLOW FILTERING", appId).
@@ -201,7 +201,7 @@ public class PreferencesServiceImpl implements PreferencesService {
                 filter( evtOffset -> evtOffset.first() instanceof AppEvent.AppCreated ).
                 mapAsync( 1, evtOffset -> {
                     AppEvent appEvent = evtOffset.first();
-                    log.info( "PreferencesServiceImpl.streamForTag: pushing AppEvent to topic: {}", appEvent );
+                    log.info( "pushing AppEvent {} to topic", appEvent );
                     return CompletableFuture.completedFuture(
                             Pair.create( PreferencesEvent.builder().
                                             appId( appEvent.getAppId() ).
