@@ -16,9 +16,7 @@ import com.frank.lagomtest.preferences.api.values.FullAppDetails.FullBuilder;
 import com.frank.lagomtest.preferences.api.PreferencesService;
 import com.frank.lagomtest.preferences.impl.AppCommand.ActivateApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.AddBlockContainer;
-import com.frank.lagomtest.preferences.impl.AppCommand.CancelApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
-import com.frank.lagomtest.preferences.impl.AppCommand.DeactivateApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.RemoveBlockContainer;
 import com.lightbend.lagom.javadsl.broker.TopicProducer;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
@@ -194,18 +192,16 @@ public class PreferencesServiceImpl implements PreferencesService {
 
     private Source<Pair<PreferencesEvent, Offset>, ?> streamForTag( AggregateEventTag<AppEvent> tag, Offset offset ) {
 
-        // Converto l'evento AppCreated in PreferencesMessage
+        // Converto l'evento AppEvent in PreferencesEvent
         return persistentEntities.eventStream( tag, offset ).
                 filter( evtOffset -> evtOffset.first() instanceof AppEvent.AppCreated ).
                 mapAsync( 1, evtOffset -> {
-                    AppEvent.AppCreated appCreated = (AppEvent.AppCreated) evtOffset.first();
-
-                    System.out.println( "PreferencesServiceImpl.streamForTag: pushing AppCreated to topic: " + appCreated );
-                    
+                    AppEvent appEvent = (AppEvent) evtOffset.first();
+                    System.out.println( "PreferencesServiceImpl.streamForTag: pushing AppEvent to topic: " + appEvent );                   
                     return CompletableFuture.completedFuture(
                             Pair.create( PreferencesEvent.builder().
-                                            appId( appCreated.appId ).
-                                            message( "App created" ).
+                                            appId( appEvent.getAppId() ).
+                                            message( appEvent.getEventName() ).
                                             build(),
                                     evtOffset.second() ) );
                 } );
