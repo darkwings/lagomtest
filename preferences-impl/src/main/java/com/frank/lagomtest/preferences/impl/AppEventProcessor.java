@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.lightbend.lagom.javadsl.persistence.cassandra.CassandraReadSide.completedStatements;
 
@@ -21,8 +22,10 @@ import static com.lightbend.lagom.javadsl.persistence.cassandra.CassandraReadSid
  * @author ftorriani
  */
 public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
-
-    public static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
+    
+	private static final AtomicInteger COUNTER = new AtomicInteger(0);
+    
+	public static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
             "id TEXT, description TEXT, creator_id TEXT, status TEXT, PRIMARY KEY (id))";
 
     public static final String CREATE_BLOCKCONTAINERS = "CREATE TABLE IF NOT EXISTS blockcontainers ( " +
@@ -100,6 +103,15 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppCreated( AppEvent.AppCreated event ) {
+    	
+    	// Simuliamo un fallimento temporaneo del servizio
+    	int i = COUNTER.incrementAndGet();
+    	if (i < 2) {
+    		throw new RuntimeException("Beccati questa!!!");
+    	}
+    	System.out.println();
+    	System.out.println( "AppEventProcessor.processAppCreated -> " + event );
+    	
         BoundStatement bindWriteApp = writeApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "description", event.app.getDescription() );
@@ -109,7 +121,8 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     }
 
     private CompletionStage<List<BoundStatement>> processAppActivated( AppEvent.AppActivated event ) {
-    		System.out.println( "AppEventProcessor.processAppActivated -> " + event );
+    	
+    	
         BoundStatement bindWriteApp = updateStatusApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "status", AppStatus.ACTIVE.name() );
