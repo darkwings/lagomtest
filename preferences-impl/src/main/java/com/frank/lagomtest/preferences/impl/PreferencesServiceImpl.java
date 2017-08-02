@@ -108,6 +108,7 @@ public class PreferencesServiceImpl implements PreferencesService {
                     invoke( UserAuthorizationRequest.from( token ) ).
                     thenApply( userAuth -> {
                         if ( userAuth.hasRole( role ) ) {
+                            log.info( "User {} has role {}", userAuth.getUsername(), role );
                             return serviceCall;
                         }
                         else {

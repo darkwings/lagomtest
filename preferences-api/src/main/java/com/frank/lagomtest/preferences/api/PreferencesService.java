@@ -38,7 +38,7 @@ public interface PreferencesService extends Service {
     ServiceCall<App, CreateAppResult> createApp( String appId );
 
     /**
-     * @param appId
+     * @param appId the app id
      * @return the {@link AppDetails details} of an {@link App}
      */
     ServiceCall<NotUsed, FullAppDetails> getApp( String appId );
