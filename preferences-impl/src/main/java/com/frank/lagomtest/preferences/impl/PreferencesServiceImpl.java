@@ -6,7 +6,6 @@ import akka.japi.Pair;
 import akka.stream.javadsl.Source;
 import com.frank.lagomtest.authorization.api.AuthorizationService;
 import com.frank.lagomtest.authorization.api.Role;
-import com.frank.lagomtest.authorization.api.UserAuthorization;
 import com.frank.lagomtest.authorization.api.UserAuthorizationRequest;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.api.event.PreferencesEvent;
@@ -42,7 +41,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.frank.lagomtest.authorization.api.Role.ADMIN;
@@ -53,6 +51,12 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * @author ftorriani
  */
 public class PreferencesServiceImpl implements PreferencesService {
+
+    public static final String SELECT_APP = "SELECT description, creator_id, status FROM appsummary where id = ?";
+
+    public static final String SELECT_BLOCK_CONTAINER = "SELECT id from blockcontainers where app_id=? ALLOW FILTERING";
+
+    public static final String SELECT_ALL_APPS = "SELECT id, description, creator_id, status FROM appsummary";
 
     private final Logger log = LoggerFactory.getLogger( PreferencesServiceImpl.class );
 
@@ -78,18 +82,30 @@ public class PreferencesServiceImpl implements PreferencesService {
         readSide.register( AppEventProcessor.class );
     }
 
+    /**
+     * Verifies authorization of the user identified by the token received in HTTP Header.
+     * FIXME should be in a super class of the Service
+     *
+     * @param role the role that should have access granted to the feature
+     * @param serviceCall the serviceCall to actually perform if the user is authorized
+     * @param <Request> the request
+     * @param <Response> the response
+     * @return the service call to be performed is user is authorized
+     */
     private <Request, Response> ServerServiceCall<Request, Response> authorized(
             Role role,
             ServerServiceCall<Request, Response> serviceCall ) {
+
         return HeaderServiceCall.composeAsync( requestHeader -> {
             Optional<String> authOpt = requestHeader.getHeader( "Authorization" );
             if ( !authOpt.isPresent() ) {
                 throw new Forbidden( "User not present" );
             }
-            String auth = authOpt.get().substring( "Bearer ".length() );
+
+            String token = authOpt.get().substring( "Bearer ".length() );
 
             return authorizationService.authorize().
-                    invoke( UserAuthorizationRequest.from( auth ) ).
+                    invoke( UserAuthorizationRequest.from( token ) ).
                     thenApply( userAuth -> {
                         if ( userAuth.hasRole( role ) ) {
                             return serviceCall;
@@ -98,10 +114,7 @@ public class PreferencesServiceImpl implements PreferencesService {
                             throw new Forbidden( "User " + userAuth.getUsername() + " has no role " + role );
                         }
                     } );
-
-
         } );
-
     }
 
     @Override
@@ -122,8 +135,7 @@ public class PreferencesServiceImpl implements PreferencesService {
 
         return authorized( USER, request -> {
             CompletionStage<AppDetails> detail =
-                    cassandraSession.selectOne( "SELECT description, creator_id, status " +
-                            "FROM appsummary where id = ?", appId ).
+                    cassandraSession.selectOne( SELECT_APP, appId ).
                             thenApply( opt -> {
                                 if ( opt.isPresent() ) {
                                     return opt.get();
@@ -142,7 +154,7 @@ public class PreferencesServiceImpl implements PreferencesService {
             // FIXME: una query con ALLOW FILTERING non è particolarmente efficiente
             // in quanto c'è il rischio di qualcosa di simile ad un full table scan
             CompletionStage<List<String>> blockIds = cassandraSession.
-                    selectAll( "SELECT id from blockcontainers where app_id=? ALLOW FILTERING", appId ).
+                    selectAll( SELECT_BLOCK_CONTAINER, appId ).
                     thenApply( rows ->
                             rows.stream().map( row -> row.getString( "id" ) ).collect( Collectors.toList() )
                     );
@@ -201,7 +213,7 @@ public class PreferencesServiceImpl implements PreferencesService {
     public ServiceCall<NotUsed, PSequence<AppDetails>> getAllApps() {
         return authorized( USER, request -> {
             CompletionStage<PSequence<AppDetails>> result =
-                    cassandraSession.selectAll( "SELECT id, description, creator_id, status FROM appsummary" ).
+                    cassandraSession.selectAll( SELECT_ALL_APPS ).
                             thenApply( rows -> {
                                 List<AppDetails> details = rows.stream().
                                         map( row -> AppDetails.builder().
