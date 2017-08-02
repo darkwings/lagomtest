@@ -8,6 +8,7 @@ import com.frank.lagomtest.preferences.api.model.BlockContainer;
 import com.frank.lagomtest.preferences.api.values.AppDetails;
 import com.frank.lagomtest.preferences.api.values.CreateAppResult;
 import com.frank.lagomtest.preferences.api.values.FullAppDetails;
+import com.lightbend.lagom.javadsl.api.CircuitBreaker;
 import com.lightbend.lagom.javadsl.api.Descriptor;
 import com.lightbend.lagom.javadsl.api.Service;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
@@ -98,9 +99,11 @@ public interface PreferencesService extends Service {
     default Descriptor descriptor() {
         // @formatter:off
         return named( "preferences" ).withCalls(
+                        pathCall( "/api/preferences/app/:appId", this::getApp ).
+                                withCircuitBreaker( CircuitBreaker.identifiedBy( "preferences-get" ) ),
+                        namedCall( "/api/preferences/app", this::getAllApps ).
+                                withCircuitBreaker( CircuitBreaker.identifiedBy( "preferences-get" ) ),
                         pathCall( "/api/preferences/app/:appId", this::createApp ),
-                        pathCall( "/api/preferences/app/:appId", this::getApp ),
-                        namedCall( "/api/preferences/app", this::getAllApps ),
                         restCall( Method.POST, "/api/preferences/activate/:appId", this::activate ),
                         restCall( Method.POST, "/api/preferences/deactivate/:appId", this::deactivate ),
                         restCall( Method.POST, "/api/preferences/cancel/:appId", this::cancel ),
