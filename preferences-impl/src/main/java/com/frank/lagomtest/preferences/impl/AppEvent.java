@@ -31,9 +31,9 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
     //#sharded-tags
 
-    public String getAppId();
+    String getAppId();
     
-    public String getEventName();
+    String getEventName();
     
     @SuppressWarnings("serial")
     abstract class AbstractAppEvent implements AppEvent {

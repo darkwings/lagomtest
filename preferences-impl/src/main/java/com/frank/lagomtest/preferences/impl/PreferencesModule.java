@@ -3,6 +3,7 @@
  */
 package com.frank.lagomtest.preferences.impl;
 
+import com.frank.lagomtest.authorization.api.AuthorizationService;
 import com.frank.lagomtest.preferences.api.PreferencesService;
 import com.google.inject.AbstractModule;
 import com.lightbend.lagom.javadsl.server.ServiceGuiceSupport;
@@ -17,6 +18,7 @@ public class PreferencesModule extends AbstractModule implements ServiceGuiceSup
 
         bindService( PreferencesService.class, PreferencesServiceImpl.class );
 
-//        bind( AppEventProcessor.class ).asEagerSingleton();
+        bindClient( AuthorizationService.class );
+
     }
 }

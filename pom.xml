@@ -17,6 +17,8 @@
         <module>preferences-api</module>
         <module>preferences-impl</module>
         <module>integration-tests</module>
+        <module>authorization-api</module>
+        <module>authorization-impl</module>
     </modules>
 
     <build>

@@ -22,6 +22,9 @@ import org.slf4j.LoggerFactory;
 import static com.lightbend.lagom.javadsl.persistence.cassandra.CassandraReadSide.completedStatements;
 
 /**
+ * Read-side processor for Cassandra. It updates the database based on {@link AppEvent events} generated
+ * by the persistent {@link AppEntity}
+ *
  * @author ftorriani
  */
 public class AppEventProcessor extends ReadSideProcessor<AppEvent> {

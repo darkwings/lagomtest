@@ -9,16 +9,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>preferences-impl</artifactId>
+    <artifactId>authorization-impl</artifactId>
 
     <packaging>jar</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>preferences-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>authorization-api</artifactId>
@@ -39,7 +34,7 @@
         <dependency>
             <groupId>com.lightbend.lagom</groupId>
             <artifactId>lagom-javadsl-broker_2.11</artifactId>
-        </dependency>    
+        </dependency>
         <dependency>
             <groupId>com.lightbend.lagom</groupId>
             <artifactId>lagom-javadsl-kafka-broker_2.11</artifactId>
