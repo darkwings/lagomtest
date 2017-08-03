@@ -252,7 +252,7 @@ public class PreferencesServiceImpl implements PreferencesService {
 
         // Converto l'evento AppEvent in PreferencesEvent
         return persistentEntities.eventStream( tag, offset ).
-                filter( evtOffset -> evtOffset.first() instanceof AppEvent.AppCreated ).
+                filter( evtOffset -> evtOffset.first() instanceof AppEvent ).
                 mapAsync( 1, evtOffset -> {
                     AppEvent appEvent = evtOffset.first();
                     log.info( "pushing AppEvent {} to topic", appEvent );
