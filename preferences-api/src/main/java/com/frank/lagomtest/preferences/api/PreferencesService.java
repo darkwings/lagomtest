@@ -33,9 +33,9 @@ public interface PreferencesService extends Service {
 
     /**
      * Example:
-     * curl -X POST -d '{'"description":"my new app", "creatorId":"frank"}' http://localhost:9000/api/preferences/app/11221
+     * curl -X POST -d '{'"appId":"123123", "description":"my new app", "creatorId":"frank", "portalContext":"pc"}' http://localhost:9000/api/preferences/app/11221
      */
-    ServiceCall<App, CreateAppResult> createApp( String appId );
+    ServiceCall<App, CreateAppResult> createApp();
 
     /**
      * @param appId the app id
@@ -103,12 +103,14 @@ public interface PreferencesService extends Service {
                                 withCircuitBreaker( CircuitBreaker.identifiedBy( "preferences-get" ) ),
                         namedCall( "/api/preferences/app", this::getAllApps ).
                                 withCircuitBreaker( CircuitBreaker.identifiedBy( "preferences-get" ) ),
-                        pathCall( "/api/preferences/app/:appId", this::createApp ),
+                        restCall( Method.POST, "/api/preferences/app", this::createApp ),
                         restCall( Method.POST, "/api/preferences/activate/:appId", this::activate ),
                         restCall( Method.POST, "/api/preferences/deactivate/:appId", this::deactivate ),
                         restCall( Method.POST, "/api/preferences/cancel/:appId", this::cancel ),
-                        restCall( Method.POST, "/api/preferences/app/:appId/addBlockContainer", this::addBlockContainer ),
-                        restCall( Method.DELETE, "/api/preferences/app/:appId/deleteBlockContainer/:blockId", this::removeBlockContainer ),
+                        restCall( Method.POST, "/api/preferences/app/:appId/addBlockContainer",
+                                this::addBlockContainer ),
+                        restCall( Method.DELETE, "/api/preferences/app/:appId/deleteBlockContainer/:blockId",
+                                this::removeBlockContainer ),
                         pathCall( "/api/preferences/echo/:message", this::echo )
                 ).
                 withTopics(

@@ -124,11 +124,11 @@ public class PreferencesServiceImpl implements PreferencesService {
     }
 
     @Override
-    public ServiceCall<App, CreateAppResult> createApp( String appId ) {
+    public ServiceCall<App, CreateAppResult> createApp() {
 
-        return authorized( ADMIN, request -> entityRef( appId ).
+        return authorized( ADMIN, request -> entityRef( request.getAppId() ).
                 ask( CreateApp.from( request ) ).
-                thenApply( createAppDone -> CreateAppResult.from( appId ) ) );
+                thenApply( createAppDone -> CreateAppResult.from( request.getAppId() ) ) );
     }
 
     @Override
@@ -199,7 +199,7 @@ public class PreferencesServiceImpl implements PreferencesService {
     @Override
     public ServiceCall<BlockContainer, Done> addBlockContainer( String appId ) {
         return authorized( ADMIN, request -> entityRef( appId ).
-                ask( AddBlockContainer.from( request.blockContainerId ) ).
+                ask( AddBlockContainer.from( request.getBlockContainerId() ) ).
                 thenApply( r -> Done.getInstance() ) );
     }
 
