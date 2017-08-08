@@ -1,4 +1,4 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.impl.app;
 
 import akka.Done;
 import com.fasterxml.jackson.annotation.JsonCreator;

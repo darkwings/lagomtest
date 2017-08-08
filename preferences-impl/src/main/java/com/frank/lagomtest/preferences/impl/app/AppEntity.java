@@ -1,10 +1,10 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.impl.app;
 
 import akka.Done;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
-import com.frank.lagomtest.preferences.impl.AppCommand.*;
-import com.frank.lagomtest.preferences.impl.AppEvent.*;
+import com.frank.lagomtest.preferences.impl.app.AppCommand.*;
+import com.frank.lagomtest.preferences.impl.app.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,8 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         if ( snapshot.isPresent() ) {
             log.info( "AppEntity {}: snapshot is present", entityId() );
             AppState state = snapshot.get();
-            switch ( state.status ) {
+
+            switch ( snapshot.get().getStatus().orElse( AppStatus.DRAFT ) ) {
                 case DRAFT:
                     b = draft( state );
                     break;
@@ -186,7 +187,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         builder.setReadOnlyCommandHandler( GetApp.class, ( cmd, ctx ) -> {
             ctx.reply( GetAppReply.builder().
                     app( state().app ).
-                    status( state().status ).
+                    status( state().status.get() ).
                     build() );
         } );
     }

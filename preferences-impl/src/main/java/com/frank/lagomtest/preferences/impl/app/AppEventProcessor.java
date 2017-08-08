@@ -1,4 +1,4 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.impl.app;
 
 import akka.Done;
 import com.datastax.driver.core.BoundStatement;
@@ -14,7 +14,6 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

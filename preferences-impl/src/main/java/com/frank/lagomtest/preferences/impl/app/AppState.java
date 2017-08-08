@@ -1,4 +1,4 @@
-package com.frank.lagomtest.preferences.impl;
+package com.frank.lagomtest.preferences.impl.app;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -24,7 +24,7 @@ public final class AppState implements CompressedJsonable {
     /**
      * The App status
      */
-    public final AppStatus status;
+    public final Optional<AppStatus> status;
 
     /**
      * {@link AppState} builder
@@ -47,13 +47,13 @@ public final class AppState implements CompressedJsonable {
         }
 
         public AppState build() {
-            return new AppState( Optional.of( app ), status );
+            return new AppState( Optional.of( app ), Optional.of( status ) );
         }
     }
 
     @JsonCreator
     private AppState( @JsonProperty("app") Optional<App> app,
-                      @JsonProperty("status") AppStatus status ) {
+                      @JsonProperty("status") Optional<AppStatus> status ) {
         this.app = app;
         this.status = status;
     }
@@ -84,5 +84,13 @@ public final class AppState implements CompressedJsonable {
         Builder b = new Builder();
         b.app = previousState.app.get();
         return b;
+    }
+
+    public Optional<App> getApp() {
+        return app;
+    }
+
+    public Optional<AppStatus> getStatus() {
+        return status;
     }
 }
