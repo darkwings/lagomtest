@@ -2,6 +2,7 @@ package com.frank.lagomtest.preferences.impl;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.lightbend.lagom.serialization.CompressedJsonable;
@@ -51,7 +52,8 @@ public final class AppState implements CompressedJsonable {
     }
 
     @JsonCreator
-    private AppState( Optional<App> app, AppStatus status ) {
+    private AppState( @JsonProperty("app") Optional<App> app,
+                      @JsonProperty("status") AppStatus status ) {
         this.app = app;
         this.status = status;
     }

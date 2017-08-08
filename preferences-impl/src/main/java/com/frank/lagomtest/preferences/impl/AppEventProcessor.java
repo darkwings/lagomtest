@@ -31,7 +31,7 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
 
     private final Logger log = LoggerFactory.getLogger( AppEventProcessor.class );
 
-    private static final AtomicInteger COUNTER = new AtomicInteger( 0 );
+//    private static final AtomicInteger COUNTER = new AtomicInteger( 0 );
 
     private static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
             "id TEXT, description TEXT, creator_id TEXT, status TEXT, PRIMARY KEY (id))";
@@ -113,10 +113,10 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     private CompletionStage<List<BoundStatement>> processAppCreated( AppEvent.AppCreated event ) {
 
         // Simuliamo un fallimento temporaneo del servizio
-        int i = COUNTER.incrementAndGet();
-        if ( i < 2 ) {
-            throw new RuntimeException( "Catch this!!!" );
-        }
+//        int i = COUNTER.incrementAndGet();
+//        if ( i < 2 ) {
+//            throw new RuntimeException( "Catch this!!!" );
+//        }
         log.info( "processAppCreated -> {}", event );
 
         BoundStatement bindWriteApp = writeApp.bind();
