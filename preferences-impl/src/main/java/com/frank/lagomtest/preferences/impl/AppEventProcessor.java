@@ -14,7 +14,6 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,22 +30,21 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
 
     private final Logger log = LoggerFactory.getLogger( AppEventProcessor.class );
 
-//    private static final AtomicInteger COUNTER = new AtomicInteger( 0 );
-
     private static final String CREATE_APPSUMMARY = "CREATE TABLE IF NOT EXISTS appsummary ( " +
-            "id TEXT, description TEXT, creator_id TEXT, status TEXT, PRIMARY KEY (id))";
+            "id TEXT, description TEXT, creator_id TEXT, portal_context TEXT, status TEXT, PRIMARY KEY (id))";
 
     private static final String CREATE_BLOCKCONTAINERS = "CREATE TABLE IF NOT EXISTS blockcontainers ( " +
-            "id TEXT, app_id TEXT, PRIMARY KEY (id))";
+            "id TEXT, app_id TEXT, description TEXT, PRIMARY KEY (id))";
 
     private static final String INSERT_INTO_APPSUMMARY = "INSERT INTO appsummary " +
-            "(id, description, creator_id, status) " +
-            "VALUES (?, ?, ?, ?)";
+            "(id, description, creator_id, portal_context, status) " +
+            "VALUES (?, ?, ?, ?, ?)";
 
     private static final String UPDATE_APPSUMMARY = "UPDATE appsummary set status=? where id=?";
 
-    private static final String INSERT_INTO_BLOCKCONTAINERS = "INSERT INTO blockcontainers (id, app_id) " +
-            "VALUES (?, ?)";
+    private static final String INSERT_INTO_BLOCKCONTAINERS = "INSERT INTO blockcontainers " +
+            "(id, app_id, description) " +
+            "VALUES (?, ?, ?)";
 
     private static final String DELETE_FROM_BLOCKCONTAINERS = "DELETE FROM blockcontainers where id = ?";
 
@@ -112,17 +110,13 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
 
     private CompletionStage<List<BoundStatement>> processAppCreated( AppEvent.AppCreated event ) {
 
-        // Simuliamo un fallimento temporaneo del servizio
-//        int i = COUNTER.incrementAndGet();
-//        if ( i < 2 ) {
-//            throw new RuntimeException( "Catch this!!!" );
-//        }
         log.info( "processAppCreated -> {}", event );
 
         BoundStatement bindWriteApp = writeApp.bind();
         bindWriteApp.setString( "id", event.appId );
         bindWriteApp.setString( "description", event.app.getDescription() );
         bindWriteApp.setString( "creator_id", event.app.getCreatorId() );
+        bindWriteApp.setString( "portal_context", event.app.getPortalContext() );
         bindWriteApp.setString( "status", AppStatus.DRAFT.name() );
         return completedStatements( Arrays.asList( bindWriteApp ) );
     }
@@ -155,8 +149,9 @@ public class AppEventProcessor extends ReadSideProcessor<AppEvent> {
     private CompletionStage<List<BoundStatement>> processBlockContainerAdded( AppEvent.BlockContainerAdded event ) {
         log.info( "processBlockContainerAdded -> {}", event );
         BoundStatement bindWriteApp = writeBlockContainer.bind();
-        bindWriteApp.setString( "id", event.blockContainerId );
+        bindWriteApp.setString( "id", event.blockContainer.getBlockContainerId() );
         bindWriteApp.setString( "app_id", event.appId );
+        bindWriteApp.setString( "description", event.blockContainer.getDescription() );
         return completedStatements( Arrays.asList( bindWriteApp ) );
     }
 

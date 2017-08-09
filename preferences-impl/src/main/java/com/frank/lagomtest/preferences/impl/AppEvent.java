@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.frank.lagomtest.preferences.api.model.App;
+import com.frank.lagomtest.preferences.api.model.BlockContainer;
 import com.lightbend.lagom.javadsl.persistence.AggregateEvent;
 import com.lightbend.lagom.javadsl.persistence.AggregateEventShards;
 import com.lightbend.lagom.javadsl.persistence.AggregateEventTag;
@@ -293,36 +294,36 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
     @JsonDeserialize
     class BlockContainerAdded extends AbstractAppEvent {
 
-        public final String blockContainerId;
-       
+        public final BlockContainer blockContainer;
 
         @JsonCreator
         private BlockContainerAdded( @JsonProperty("appId") String appId, 
-        								@JsonProperty("blockContainerId") String blockContainerId ) {
+        								@JsonProperty("blockContainer") BlockContainer blockContainer ) {
             super( appId );
-            Objects.requireNonNull( blockContainerId );           
-            this.blockContainerId = blockContainerId;
+            this.blockContainer = blockContainer;
         }                
 
         public static class Builder {
-            private String blockContainerId;
+            private BlockContainer blockContainer;
             private String appId;
 
             private Builder() {
             }
 
-            public Builder blockContainerId( String blockContainerId ) {
-                this.blockContainerId = blockContainerId;
+            public Builder blockContainer( BlockContainer blockContainer ) {
+                Objects.requireNonNull( blockContainer );
+                this.blockContainer = blockContainer;
                 return this;
             }
 
             public Builder appId( String appId ) {
+                Objects.requireNonNull( appId );
                 this.appId = appId;
                 return this;
             }
 
             public BlockContainerAdded build() {
-                return new BlockContainerAdded( appId, blockContainerId );
+                return new BlockContainerAdded( appId, blockContainer );
             }
         }
 
@@ -346,27 +347,21 @@ public interface AppEvent extends Jsonable, AggregateEvent<AppEvent> {
 
             BlockContainerAdded that = (BlockContainerAdded) o;
 
-            return blockContainerId != null ?
-                    blockContainerId.equals( that.blockContainerId ) : that.blockContainerId == null;
+            return blockContainer != null ? blockContainer.equals( that.blockContainer ) : that.blockContainer == null;
         }
 
         @Override
         public int hashCode() {
-            return blockContainerId != null ? blockContainerId.hashCode() : 0;
+            return blockContainer != null ? blockContainer.hashCode() : 0;
         }
 
-		@Override
-		public String toString() {
-			StringBuilder builder2 = new StringBuilder();
-			builder2.append("BlockContainerAdded [blockContainerId=");
-			builder2.append(blockContainerId);
-			builder2.append(", appId=");
-			builder2.append(appId);
-			builder2.append("]");
-			return builder2.toString();
-		}
-        
-        
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder( "BlockContainerAdded{" );
+            sb.append( "blockContainer=" ).append( blockContainer );
+            sb.append( '}' );
+            return sb.toString();
+        }
     }
 
     @SuppressWarnings("serial")

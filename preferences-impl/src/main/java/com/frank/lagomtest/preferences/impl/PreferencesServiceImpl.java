@@ -52,11 +52,14 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  */
 public class PreferencesServiceImpl implements PreferencesService {
 
-    public static final String SELECT_APP = "SELECT description, creator_id, status FROM appsummary where id = ?";
+    private static final String SELECT_APP = "SELECT description, creator_id, status, portal_context " +
+            "FROM appsummary where id = ?";
 
-    public static final String SELECT_BLOCK_CONTAINER = "SELECT id from blockcontainers where app_id=? ALLOW FILTERING";
+    private static final String SELECT_ALL_APPS = "SELECT id, description, portal_context, creator_id, status " +
+            "FROM appsummary";
 
-    public static final String SELECT_ALL_APPS = "SELECT id, description, creator_id, status FROM appsummary";
+    private static final String SELECT_BLOCK_CONTAINER = "SELECT id, description from blockcontainers " +
+            "where app_id=? ALLOW FILTERING";
 
     private final Logger log = LoggerFactory.getLogger( PreferencesServiceImpl.class );
 
@@ -86,10 +89,10 @@ public class PreferencesServiceImpl implements PreferencesService {
      * Verifies authorization of the user identified by the token received in HTTP Header.
      * FIXME should be in a super class of the Service
      *
-     * @param role the role that should have access granted to the feature
+     * @param role        the role that should have access granted to the feature
      * @param serviceCall the serviceCall to actually perform if the user is authorized
-     * @param <Request> the request
-     * @param <Response> the response
+     * @param <Request>   the request
+     * @param <Response>  the response
      * @return the service call to be performed is user is authorized
      */
     private <Request, Response> ServerServiceCall<Request, Response> authorized(
@@ -134,6 +137,7 @@ public class PreferencesServiceImpl implements PreferencesService {
     @Override
     public ServiceCall<NotUsed, FullAppDetails> getApp( String appId ) {
 
+        // TODO verificare se utilizzare direttamente lo state()
         return authorized( USER, request -> {
             CompletionStage<AppDetails> detail =
                     cassandraSession.selectOne( SELECT_APP, appId ).
@@ -149,20 +153,25 @@ public class PreferencesServiceImpl implements PreferencesService {
                                     appId( appId ).
                                     description( row.getString( "description" ) ).
                                     creatorId( row.getString( "creator_id" ) ).
+                                    portalContext( row.getString( "portal_context" ) ).
                                     status( AppStatus.valueOf( row.getString( "status" ) ) ).
                                     build() );
 
             // FIXME: una query con ALLOW FILTERING non è particolarmente efficiente
             // in quanto c'è il rischio di qualcosa di simile ad un full table scan
-            CompletionStage<List<String>> blockIds = cassandraSession.
+            CompletionStage<List<BlockContainerDetail>> blockIds = cassandraSession.
                     selectAll( SELECT_BLOCK_CONTAINER, appId ).
                     thenApply( rows ->
-                            rows.stream().map( row -> row.getString( "id" ) ).collect( Collectors.toList() )
+                            rows.stream().map( row -> BlockContainerDetail.builder().
+                                    blockContainerId( row.getString( "id" ) ).
+                                    description( row.getString( "description" ) ).
+                                    build() ).
+                                    collect( Collectors.toList() )
                     );
 
-            return detail.thenCombine( blockIds, ( aDetail, ids ) -> {
+            return detail.thenCombine( blockIds, ( aDetail, bcDetails ) -> {
                 FullBuilder builder = FullAppDetails.fullBuilder().appDetails( aDetail );
-                ids.stream().forEach( id -> builder.add( BlockContainerDetail.from( id ) ) );
+                bcDetails.stream().forEach( det -> builder.add( det ) );
                 return builder.buildFull();
             } );
 
@@ -179,27 +188,23 @@ public class PreferencesServiceImpl implements PreferencesService {
 
     @Override
     public ServiceCall<NotUsed, Done> deactivate( String appId ) {
-        throw new UnsupportedOperationException( "Unsupported" );
-        // TODO: occorre controllare se appId esiste o no
-//	    	return request -> entityRef( appId ).
-//	                ask( DeactivateApp.build() ).
-//	                thenApply( r -> Done.getInstance() );	
+        return request -> entityRef( appId ).
+                ask( AppCommand.DeactivateApp.build() ).
+                thenApply( r -> Done.getInstance() );
     }
 
     @Override
     public ServiceCall<NotUsed, Done> cancel( String appId ) {
-        throw new UnsupportedOperationException( "Unsupported" );
-        // TODO: occorre controllare se appId esiste o no
-//	    	return request -> entityRef( appId ).
-//	                ask( CancelApp.build() ).
-//	                thenApply( r -> Done.getInstance() );	
+        return request -> entityRef( appId ).
+                ask( AppCommand.CancelApp.build() ).
+                thenApply( r -> Done.getInstance() );
     }
 
 
     @Override
     public ServiceCall<BlockContainer, Done> addBlockContainer( String appId ) {
         return authorized( ADMIN, request -> entityRef( appId ).
-                ask( AddBlockContainer.from( request.getBlockContainerId() ) ).
+                ask( AddBlockContainer.from( request ) ).
                 thenApply( r -> Done.getInstance() ) );
     }
 
@@ -221,6 +226,7 @@ public class PreferencesServiceImpl implements PreferencesService {
                                                 appId( row.getString( "id" ) ).
                                                 description( row.getString( "description" ) ).
                                                 creatorId( row.getString( "creator_id" ) ).
+                                                portalContext( row.getString( "portal_context" ) ).
                                                 status( AppStatus.valueOf( row.getString( "status" ) ) ).
                                                 build() ).
                                         collect( Collectors.toList() );

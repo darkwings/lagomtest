@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
+import com.frank.lagomtest.preferences.api.model.BlockContainer;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import com.lightbend.lagom.serialization.CompressedJsonable;
 import com.lightbend.lagom.serialization.Jsonable;
@@ -104,101 +105,101 @@ public interface AppCommand extends Jsonable {
         }
     }
 
-    @SuppressWarnings("serial")
-    @Immutable
-    @JsonDeserialize
-    class GetApp implements AppCommand, CompressedJsonable,
-            PersistentEntity.ReplyType<GetAppReply> {
-
-        @JsonCreator
-        private GetApp() {
-        }
-
-        public static GetApp build() {
-            return new GetApp();
-        }
-
-        @Override
-        public boolean equals( @Nullable Object another ) {
-            return this instanceof GetApp;
-        }
-
-        @Override
-        public int hashCode() {
-            return 2053226012;
-        }
-    }
-
-    @SuppressWarnings("serial")
-    @Immutable
-    @JsonDeserialize
-    class GetAppReply implements Jsonable {
-        final Optional<App> app;
-        final AppStatus status;
-
-        public static class Builder {
-            Optional<App> app;
-            AppStatus status;
-
-            private Builder() {
-            }
-
-            public Builder app( Optional<App> app ) {
-                this.app = app;
-                return this;
-            }
-
-            public Builder status( AppStatus status ) {
-                this.status = status;
-                return this;
-            }
-
-            public GetAppReply build() {
-                return new GetAppReply( app, status );
-            }
-        }
-
-        public static Builder builder() {
-            return new Builder();
-        }
-
-        private GetAppReply( Optional<App> app, AppStatus status ) {
-            this.app = app;
-            this.status = status == null ? AppStatus.DRAFT : status;
-        }
-
-        public Optional<App> getApp() {
-            return app;
-        }
-
-        public AppStatus getStatus() {
-            return status;
-        }
-
-        @Override
-        public boolean equals( Object o ) {
-            if ( this == o ) {
-                return true;
-            }
-            if ( o == null || getClass() != o.getClass() ) {
-                return false;
-            }
-
-            GetAppReply reply = (GetAppReply) o;
-
-            if ( app != null ? !app.equals( reply.app ) : reply.app != null ) {
-                return false;
-            }
-            return status == reply.status;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = app != null ? app.hashCode() : 0;
-            result = 31 * result + ( status != null ? status.hashCode() : 0 );
-            return result;
-        }
-    }
+//    @SuppressWarnings("serial")
+//    @Immutable
+//    @JsonDeserialize
+//    class GetApp implements AppCommand, CompressedJsonable,
+//            PersistentEntity.ReplyType<GetAppReply> {
+//
+//        @JsonCreator
+//        private GetApp() {
+//        }
+//
+//        public static GetApp build() {
+//            return new GetApp();
+//        }
+//
+//        @Override
+//        public boolean equals( @Nullable Object another ) {
+//            return this instanceof GetApp;
+//        }
+//
+//        @Override
+//        public int hashCode() {
+//            return 2053226012;
+//        }
+//    }
+//
+//    @SuppressWarnings("serial")
+//    @Immutable
+//    @JsonDeserialize
+//    class GetAppReply implements Jsonable {
+//        final Optional<App> app;
+//        final AppStatus status;
+//
+//        public static class Builder {
+//            Optional<App> app;
+//            AppStatus status;
+//
+//            private Builder() {
+//            }
+//
+//            public Builder app( Optional<App> app ) {
+//                this.app = app;
+//                return this;
+//            }
+//
+//            public Builder status( AppStatus status ) {
+//                this.status = status;
+//                return this;
+//            }
+//
+//            public GetAppReply build() {
+//                return new GetAppReply( app, status );
+//            }
+//        }
+//
+//        public static Builder builder() {
+//            return new Builder();
+//        }
+//
+//        private GetAppReply( Optional<App> app, AppStatus status ) {
+//            this.app = app;
+//            this.status = status == null ? AppStatus.DRAFT : status;
+//        }
+//
+//        public Optional<App> getApp() {
+//            return app;
+//        }
+//
+//        public AppStatus getStatus() {
+//            return status;
+//        }
+//
+//        @Override
+//        public boolean equals( Object o ) {
+//            if ( this == o ) {
+//                return true;
+//            }
+//            if ( o == null || getClass() != o.getClass() ) {
+//                return false;
+//            }
+//
+//            GetAppReply reply = (GetAppReply) o;
+//
+//            if ( app != null ? !app.equals( reply.app ) : reply.app != null ) {
+//                return false;
+//            }
+//            return status == reply.status;
+//        }
+//
+//        @Override
+//        public int hashCode() {
+//            int result = app != null ? app.hashCode() : 0;
+//            result = 31 * result + ( status != null ? status.hashCode() : 0 );
+//            return result;
+//        }
+//    }
 
     /**
      * Activates an App
@@ -288,7 +289,7 @@ public interface AppCommand extends Jsonable {
 
 
     /**
-     * Adds a block container to an {@link AppEntity}
+     * Adds a add container to an {@link AppEntity}
      */
     @SuppressWarnings("serial")
     @Immutable
@@ -296,16 +297,16 @@ public interface AppCommand extends Jsonable {
     class AddBlockContainer implements AppCommand, CompressedJsonable,
             PersistentEntity.ReplyType<Done> {
 
-        public final String blockContainerId;
+        public final BlockContainer blockContainer;
 
         @JsonCreator
-        private AddBlockContainer( String blockContainerId ) {
-            this.blockContainerId = blockContainerId;
+        private AddBlockContainer( BlockContainer blockContainer ) {
+            this.blockContainer = blockContainer;
         }
 
-        public static AddBlockContainer from( String blockContainerId ) {
-            Objects.requireNonNull(blockContainerId);
-            return new AddBlockContainer( blockContainerId );
+        public static AddBlockContainer from( BlockContainer blockContainer ) {
+            Objects.requireNonNull( blockContainer );
+            return new AddBlockContainer( blockContainer );
         }
 
         @Override
@@ -319,17 +320,17 @@ public interface AppCommand extends Jsonable {
 
             AddBlockContainer that = (AddBlockContainer) o;
 
-            return blockContainerId != null ? blockContainerId.equals( that.blockContainerId ) : that.blockContainerId == null;
+            return blockContainer != null ? blockContainer.equals( that.blockContainer ) : that.blockContainer == null;
         }
 
         @Override
         public int hashCode() {
-            return blockContainerId != null ? blockContainerId.hashCode() : 0;
+            return blockContainer != null ? blockContainer.hashCode() : 0;
         }
     }
 
     /**
-     * Removes a block container to an {@link AppEntity}
+     * Removes a add container to an {@link AppEntity}
      */
     @SuppressWarnings("serial")
     @Immutable
@@ -345,7 +346,7 @@ public interface AppCommand extends Jsonable {
         }
 
         public static RemoveBlockContainer from( String blockContainerId ) {
-            Objects.requireNonNull(blockContainerId);
+            Objects.requireNonNull( blockContainerId );
             return new RemoveBlockContainer( blockContainerId );
         }
 

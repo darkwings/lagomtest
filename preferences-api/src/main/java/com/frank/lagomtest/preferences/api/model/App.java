@@ -12,11 +12,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public final class App {
 
     private final String appId;
-
     private final String description;
-
     private final String creatorId;
-
     private final String portalContext;
 
     private final static App EMPTY = App.builder().

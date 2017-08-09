@@ -82,7 +82,7 @@ public interface PreferencesService extends Service {
     /**
      * Remove a {@link BlockContainer}. It is deleted from the database.
      * 
-     * Given that this is a POC, no check is performed on the validity of the block ID
+     * Given that this is a POC, no check is performed on the validity of the add ID
      * 
      * @param blockContainerId the id of the {@link BlockContainer}
      * 

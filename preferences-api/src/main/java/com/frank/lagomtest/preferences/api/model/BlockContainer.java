@@ -2,10 +2,13 @@ package com.frank.lagomtest.preferences.api.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.pcollections.PSequence;
+import org.pcollections.TreePVector;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Objects;
 
 /**
  * @author ftorriani
@@ -20,7 +23,7 @@ public class BlockContainer {
     private final int width;
     private final int height;
     private final boolean iconizable;
-    private final Collection<Block> blocks;
+    private final PSequence<Block> blocks;
 
     public static class Builder {
 
@@ -31,10 +34,10 @@ public class BlockContainer {
         private int width;
         private int height;
         private boolean iconizable;
-        private Collection<Block> blocks;
+        private PSequence<Block> blocks;
 
         private Builder() {
-            blocks = new ArrayList<>();
+            blocks = TreePVector.empty();
         }
 
         public Builder blockContainerId( String blockContainerId ) {
@@ -72,8 +75,15 @@ public class BlockContainer {
             return this;
         }
 
-        public Builder block( Block block ) {
-            blocks.add( block );
+        public Builder add( Block block ) {
+            Objects.requireNonNull( block );
+            blocks = blocks.plus( block );
+            return this;
+        }
+
+        public Builder remove( Block block ) {
+            Objects.requireNonNull( block );
+            blocks = blocks.minus( block );
             return this;
         }
 
@@ -95,7 +105,7 @@ public class BlockContainer {
                             @JsonProperty("width") int width,
                             @JsonProperty("height") int height,
                             @JsonProperty("iconizable") boolean iconizable,
-                            @JsonProperty("blocks") Collection<Block> blocks ) {
+                            @JsonProperty("blocks") PSequence<Block> blocks ) {
         this.blockContainerId = blockContainerId;
         this.description = description;
         this.x = x;
@@ -130,8 +140,8 @@ public class BlockContainer {
         return iconizable;
     }
 
-    public Collection<Block> getBlocks() {
-        return Collections.unmodifiableCollection( blocks );
+    public PSequence<Block> getBlocks() {
+        return blocks;
     }
 
     @Override
@@ -157,5 +167,18 @@ public class BlockContainer {
         return blockContainerId;
     }
 
-
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder( "BlockContainer{" );
+        sb.append( "blockContainerId='" ).append( blockContainerId ).append( '\'' );
+        sb.append( ", description='" ).append( description ).append( '\'' );
+        sb.append( ", x=" ).append( x );
+        sb.append( ", y=" ).append( y );
+        sb.append( ", width=" ).append( width );
+        sb.append( ", height=" ).append( height );
+        sb.append( ", iconizable=" ).append( iconizable );
+        sb.append( ", blocks=" ).append( blocks );
+        sb.append( '}' );
+        return sb.toString();
+    }
 }

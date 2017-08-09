@@ -2,9 +2,12 @@ package com.frank.lagomtest.preferences.api.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.pcollections.PSequence;
+import org.pcollections.TreePVector;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * @author ftorriani
@@ -16,7 +19,7 @@ public class Block {
     private final int y;
     private final int width;
     private final int height;
-    private final Collection<Widget> widgets;
+    private final PSequence<Widget> widgets;
 
     @JsonCreator
     private Block( @JsonProperty("blockId") String blockId,
@@ -24,7 +27,7 @@ public class Block {
                    @JsonProperty("y") int y,
                    @JsonProperty("width") int width,
                    @JsonProperty("height") int height,
-                   @JsonProperty("widgets") Collection<Widget> widgets ) {
+                   @JsonProperty("widgets") PSequence<Widget> widgets ) {
         this.blockId = blockId;
         this.x = x;
         this.y = y;
@@ -86,10 +89,10 @@ public class Block {
         private int y;
         private int width;
         private int height;
-        private Collection<Widget> widgets;
+        private PSequence<Widget> widgets;
 
         private Builder() {
-            widgets = new ArrayList<>();
+            widgets = TreePVector.empty();
         }
 
         public Builder blockId( String blockId ) {
@@ -118,12 +121,13 @@ public class Block {
         }
 
         public Builder widgets( Collection<Widget> widgets ) {
-            this.widgets = widgets;
+            Objects.requireNonNull( widgets );
+            this.widgets.plusAll( widgets );
             return this;
         }
 
         public Builder widgets( Widget widget ) {
-            widgets.add( widget );
+            widgets.plus( widget );
             return this;
         }
 

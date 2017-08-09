@@ -16,6 +16,7 @@ public class AppDetails {
     public final String appId;
     public final String description;
     public final String creatorId;
+    public final String portalContext;
     public final AppStatus status;
 
     public static class Builder {
@@ -23,6 +24,7 @@ public class AppDetails {
         protected String description;
         protected String creatorId;
         protected AppStatus status;
+        protected String portalContext;
 
         protected Builder() {
         }
@@ -42,6 +44,11 @@ public class AppDetails {
             return this;
         }
 
+        public Builder portalContext( String portalContext ) {
+            this.portalContext = portalContext;
+            return this;
+        }
+
         public Builder app( App app ) {
             this.description = app.getDescription();
             this.creatorId = app.getCreatorId();
@@ -54,7 +61,7 @@ public class AppDetails {
         }
 
         public AppDetails build() {
-            return new AppDetails( appId, description, creatorId, status );
+            return new AppDetails( appId, description, creatorId, portalContext, status );
         }
     }
 
@@ -63,11 +70,12 @@ public class AppDetails {
     }
 
     @JsonCreator
-    protected AppDetails( String appId, String description, String creatorId, AppStatus status ) {
+    protected AppDetails( String appId, String description, String creatorId, String portalContext, AppStatus status ) {
         this.appId = appId;
         this.description = description;
         this.creatorId = creatorId;
         this.status = status;
+        this.portalContext = portalContext;
     }
 
     public String getAppId() {
@@ -84,5 +92,9 @@ public class AppDetails {
 
     public AppStatus getStatus() {
         return status;
+    }
+
+    public String getPortalContext() {
+        return portalContext;
     }
 }
