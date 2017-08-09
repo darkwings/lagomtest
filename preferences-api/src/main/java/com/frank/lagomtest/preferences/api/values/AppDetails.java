@@ -1,57 +1,36 @@
 package com.frank.lagomtest.preferences.api.values;
 
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
+import com.frank.lagomtest.preferences.api.model.App;
+import com.frank.lagomtest.preferences.api.model.BlockContainer;
+import org.pcollections.PSequence;
+import org.pcollections.TreePVector;
 
 import javax.annotation.concurrent.Immutable;
 
-/**
- * @author ftorriani
- */
 @Immutable
-public class AppDetails {
+public final class AppDetails {
 
-    public final String appId;
-    public final String description;
-    public final String creatorId;
-    public final String portalContext;
-    public final AppStatus status;
+    final App app;
+    final AppStatus status;
+    final PSequence<BlockContainer> blockContainers;
 
     public static class Builder {
-        protected String appId;
-        protected String description;
-        protected String creatorId;
-        protected AppStatus status;
-        protected String portalContext;
+        private App app;
+        private AppStatus status;
+        private PSequence<BlockContainer> blockContainers;
 
-        protected Builder() {
-        }
-
-        public Builder appId( String appId ) {
-            this.appId = appId;
-            return this;
-        }
-
-        public Builder description( String description ) {
-            this.description = description;
-            return this;
-        }
-
-        public Builder creatorId( String creatorId ) {
-            this.creatorId = creatorId;
-            return this;
-        }
-
-        public Builder portalContext( String portalContext ) {
-            this.portalContext = portalContext;
-            return this;
+        private Builder() {
+            blockContainers = TreePVector.empty();
         }
 
         public Builder app( App app ) {
-            this.description = app.getDescription();
-            this.creatorId = app.getCreatorId();
+            this.app = app;
+            return this;
+        }
+
+        public Builder blockContainers( PSequence<BlockContainer> blockContainers ) {
+            this.blockContainers = this.blockContainers.plusAll( blockContainers );
             return this;
         }
 
@@ -61,40 +40,54 @@ public class AppDetails {
         }
 
         public AppDetails build() {
-            return new AppDetails( appId, description, creatorId, portalContext, status );
+            return new AppDetails( app, status, blockContainers );
         }
+    }
+
+    private AppDetails( App app, AppStatus status, PSequence<BlockContainer> blockContainers ) {
+        this.app = app;
+        this.status = status;
+        this.blockContainers = blockContainers;
     }
 
     public static Builder builder() {
         return new Builder();
     }
 
-    @JsonCreator
-    protected AppDetails( String appId, String description, String creatorId, String portalContext, AppStatus status ) {
-        this.appId = appId;
-        this.description = description;
-        this.creatorId = creatorId;
-        this.status = status;
-        this.portalContext = portalContext;
+    public PSequence<BlockContainer> getBlockContainers() {
+        return blockContainers;
     }
 
-    public String getAppId() {
-        return appId;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getCreatorId() {
-        return creatorId;
+    public App getApp() {
+        return app;
     }
 
     public AppStatus getStatus() {
         return status;
     }
 
-    public String getPortalContext() {
-        return portalContext;
+    @Override
+    public boolean equals( Object o ) {
+        if ( this == o ) {
+            return true;
+        }
+        if ( o == null || getClass() != o.getClass() ) {
+            return false;
+        }
+
+        AppDetails reply = (AppDetails) o;
+
+        if ( app != null ? !app.equals( reply.app ) : reply.app != null ) {
+            return false;
+        }
+        return status == reply.status;
     }
+
+    @Override
+    public int hashCode() {
+        int result = app != null ? app.hashCode() : 0;
+        result = 31 * result + ( status != null ? status.hashCode() : 0 );
+        return result;
+    }
+
 }

@@ -4,9 +4,11 @@ import akka.Done;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.api.model.BlockContainer;
+import com.frank.lagomtest.preferences.api.values.AppDetails;
 import com.frank.lagomtest.preferences.impl.AppCommand.*;
 import com.frank.lagomtest.preferences.impl.AppEvent.*;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +53,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
             log.info( "AppEntity {}: snapshot is NOT present", entityId() );
             b = draft( AppState.builder().
                     app( App.empty() ).
-        build() );
+                    build() );
         }
 
         return b;
@@ -63,14 +65,14 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
-//        addGetAppCommandHandler( builder );
+        addGetAppCommandHandler( builder );
         builder.setCommandHandler( ActivateApp.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, AppActivated.from( entityId() ) ) );
 
         builder.setReadOnlyCommandHandler( DeactivateApp.class, this::notValid );
         builder.setReadOnlyCommandHandler( CancelApp.class, this::notValid );
 
-        // TODO: teoricamente queste operazioni potrebbero essere attive anche in DRAFT, da sistemare!!
+        // TODO: queste operazioni devono essere attive anche in DRAFT, per POC va bene così ma sarà da sistemare!!
         builder.setReadOnlyCommandHandler( AddBlockContainer.class, this::notValid );
         builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::notValid );
 
@@ -95,7 +97,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
-//        addGetAppCommandHandler( builder );
+        addGetAppCommandHandler( builder );
 
         builder.setCommandHandler( AddBlockContainer.class, ( cmd, ctx ) ->
                 persistAndDone( ctx, BlockContainerAdded.builder().
@@ -138,7 +140,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
-//        addGetAppCommandHandler( builder );
+        addGetAppCommandHandler( builder );
 
         builder.setReadOnlyCommandHandler( AddBlockContainer.class, this::notValid );
         builder.setReadOnlyCommandHandler( RemoveBlockContainer.class, this::notValid );
@@ -165,7 +167,7 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
 
         BehaviorBuilder builder = newBehaviorBuilder( state );
         addCreateAppCommandHandler( builder );
-//        addGetAppCommandHandler( builder );
+        addGetAppCommandHandler( builder );
 
         builder.setReadOnlyCommandHandler( ActivateApp.class, this::notValid );
         builder.setReadOnlyCommandHandler( DeactivateApp.class, this::notValid );
@@ -194,15 +196,23 @@ public class AppEntity extends PersistentEntity<AppCommand, AppEvent, AppState> 
         } );
     }
 
-//    private void addGetAppCommandHandler( BehaviorBuilder builder ) {
+    private void addGetAppCommandHandler( BehaviorBuilder builder ) {
 
-//        builder.setReadOnlyCommandHandler( GetApp.class, ( cmd, ctx ) ->
-//                ctx.reply( GetAppReply.builder().
-//                        app( state().getApp() ).
-//                        status( state().getStatus() ).
-//                        build() )
-//        );
-//    }
+        builder.setReadOnlyCommandHandler( GetApp.class, ( cmd, ctx ) -> {
+                    if ( !state().getApp().isPresent() || state().getApp().get().isEmpty() ) {
+                        ctx.invalidCommand( "App " + entityId() + " does not exists" );
+                        ctx.reply( AppDetails.builder().build() );
+                    }
+                    else {
+                        ctx.reply( AppDetails.builder().
+                                app( state().getApp().get() ).
+                                status( state().getStatus() ).
+                                blockContainers( state().getBlockContainers() ).
+                                build() );
+                    }
+                }
+        );
+    }
 
 
     /**

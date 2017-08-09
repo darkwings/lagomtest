@@ -5,9 +5,9 @@ import akka.NotUsed;
 import com.frank.lagomtest.preferences.api.event.PreferencesEvent;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.model.BlockContainer;
+import com.frank.lagomtest.preferences.api.values.AllApps;
+import com.frank.lagomtest.preferences.api.values.CreateAppDone;
 import com.frank.lagomtest.preferences.api.values.AppDetails;
-import com.frank.lagomtest.preferences.api.values.CreateAppResult;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails;
 import com.lightbend.lagom.javadsl.api.CircuitBreaker;
 import com.lightbend.lagom.javadsl.api.Descriptor;
 import com.lightbend.lagom.javadsl.api.Service;
@@ -35,13 +35,13 @@ public interface PreferencesService extends Service {
      * Example:
      * curl -X POST -d '{'"appId":"123123", "description":"my new app", "creatorId":"frank", "portalContext":"pc"}' http://localhost:9000/api/preferences/app/11221
      */
-    ServiceCall<App, CreateAppResult> createApp();
+    ServiceCall<App, CreateAppDone> createApp();
 
     /**
      * @param appId the app id
-     * @return the {@link AppDetails details} of an {@link App}
+     * @return the details of an {@link App}
      */
-    ServiceCall<NotUsed, FullAppDetails> getApp( String appId );
+    ServiceCall<NotUsed, AppDetails> getApp( String appId );
 
     /**
      * Change the status of an {@link App} to {@link AppStatus#ACTIVE}
@@ -70,7 +70,7 @@ public interface PreferencesService extends Service {
     /**
      * @return a list of all registered apps
      */
-    ServiceCall<NotUsed, PSequence<AppDetails>> getAllApps();
+    ServiceCall<NotUsed, PSequence<AllApps>> getAllApps();
     
     /**
      * Adds a {@link BlockContainer} to an {@link App}
@@ -104,14 +104,14 @@ public interface PreferencesService extends Service {
                         namedCall( "/api/preferences/app", this::getAllApps ).
                                 withCircuitBreaker( CircuitBreaker.identifiedBy( "preferences-get" ) ),
                         restCall( Method.POST, "/api/preferences/app", this::createApp ),
-                        restCall( Method.POST, "/api/preferences/activate/:appId", this::activate ),
-                        restCall( Method.POST, "/api/preferences/deactivate/:appId", this::deactivate ),
-                        restCall( Method.POST, "/api/preferences/cancel/:appId", this::cancel ),
-                        restCall( Method.POST, "/api/preferences/app/:appId/addBlockContainer",
+                        restCall( Method.POST, "/api/preferences/app/:appId/_activate", this::activate ),
+                        restCall( Method.POST, "/api/preferences/app/:appId/_deactivate", this::deactivate ),
+                        restCall( Method.POST, "/api/preferences/app/:appId/_cancel", this::cancel ),
+                        restCall( Method.POST, "/api/preferences/app/:appId/blockContainer",
                                 this::addBlockContainer ),
-                        restCall( Method.DELETE, "/api/preferences/app/:appId/deleteBlockContainer/:blockId",
-                                this::removeBlockContainer ),
-                        pathCall( "/api/preferences/echo/:message", this::echo )
+                        restCall( Method.DELETE, "/api/preferences/app/:appId/blockContainer/:blockId",
+                                this::removeBlockContainer )
+//                        , pathCall( "/api/preferences/echo/:message", this::echo )
                 ).
                 withTopics(
                         topic( PREFERENCES_TOPIC, this::preferencesTopic )

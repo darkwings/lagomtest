@@ -11,21 +11,19 @@ import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.api.event.PreferencesEvent;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.model.BlockContainer;
+import com.frank.lagomtest.preferences.api.values.AllApps;
+import com.frank.lagomtest.preferences.api.values.CreateAppDone;
 import com.frank.lagomtest.preferences.api.values.AppDetails;
-import com.frank.lagomtest.preferences.api.values.CreateAppResult;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails.BlockContainerDetail;
-import com.frank.lagomtest.preferences.api.values.FullAppDetails.FullBuilder;
 import com.frank.lagomtest.preferences.api.PreferencesService;
 import com.frank.lagomtest.preferences.impl.AppCommand.ActivateApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.AddBlockContainer;
 import com.frank.lagomtest.preferences.impl.AppCommand.CreateApp;
+import com.frank.lagomtest.preferences.impl.AppCommand.GetApp;
 import com.frank.lagomtest.preferences.impl.AppCommand.RemoveBlockContainer;
 import com.lightbend.lagom.javadsl.api.transport.Forbidden;
 import com.lightbend.lagom.javadsl.broker.TopicProducer;
 import com.lightbend.lagom.javadsl.api.ServiceCall;
 import com.lightbend.lagom.javadsl.api.broker.Topic;
-import com.lightbend.lagom.javadsl.api.transport.NotFound;
 import com.lightbend.lagom.javadsl.persistence.*;
 import com.lightbend.lagom.javadsl.persistence.cassandra.CassandraSession;
 import com.lightbend.lagom.javadsl.server.HeaderServiceCall;
@@ -127,55 +125,57 @@ public class PreferencesServiceImpl implements PreferencesService {
     }
 
     @Override
-    public ServiceCall<App, CreateAppResult> createApp() {
+    public ServiceCall<App, CreateAppDone> createApp() {
 
         return authorized( ADMIN, request -> entityRef( request.getAppId() ).
                 ask( CreateApp.from( request ) ).
-                thenApply( createAppDone -> CreateAppResult.from( request.getAppId() ) ) );
+                thenApply( createAppDone -> CreateAppDone.from( request.getAppId() ) ) );
     }
 
     @Override
-    public ServiceCall<NotUsed, FullAppDetails> getApp( String appId ) {
+    public ServiceCall<NotUsed, AppDetails> getApp( String appId ) {
 
-        // TODO verificare se utilizzare direttamente lo state()
-        return authorized( USER, request -> {
-            CompletionStage<AppDetails> detail =
-                    cassandraSession.selectOne( SELECT_APP, appId ).
-                            thenApply( opt -> {
-                                if ( opt.isPresent() ) {
-                                    return opt.get();
-                                }
-                                else {
-                                    throw new NotFound( "app " + appId + " not found" );
-                                }
-                            } ).
-                            thenApply( row -> AppDetails.builder().
-                                    appId( appId ).
-                                    description( row.getString( "description" ) ).
-                                    creatorId( row.getString( "creator_id" ) ).
-                                    portalContext( row.getString( "portal_context" ) ).
-                                    status( AppStatus.valueOf( row.getString( "status" ) ) ).
-                                    build() );
+        return authorized( USER, request -> entityRef( appId ).
+                ask( GetApp.build() ) );
 
-            // FIXME: una query con ALLOW FILTERING non è particolarmente efficiente
-            // in quanto c'è il rischio di qualcosa di simile ad un full table scan
-            CompletionStage<List<BlockContainerDetail>> blockIds = cassandraSession.
-                    selectAll( SELECT_BLOCK_CONTAINER, appId ).
-                    thenApply( rows ->
-                            rows.stream().map( row -> BlockContainerDetail.builder().
-                                    blockContainerId( row.getString( "id" ) ).
-                                    description( row.getString( "description" ) ).
-                                    build() ).
-                                    collect( Collectors.toList() )
-                    );
-
-            return detail.thenCombine( blockIds, ( aDetail, bcDetails ) -> {
-                FullBuilder builder = FullAppDetails.fullBuilder().appDetails( aDetail );
-                bcDetails.stream().forEach( det -> builder.add( det ) );
-                return builder.buildFull();
-            } );
-
-        } );
+//        return authorized( USER, request -> {
+//            CompletionStage<AllApps> detail =
+//                    cassandraSession.selectOne( SELECT_APP, appId ).
+//                            thenApply( opt -> {
+//                                if ( opt.isPresent() ) {
+//                                    return opt.get();
+//                                }
+//                                else {
+//                                    throw new NotFound( "app " + appId + " not found" );
+//                                }
+//                            } ).
+//                            thenApply( row -> AllApps.builder().
+//                                    appId( appId ).
+//                                    description( row.getString( "description" ) ).
+//                                    creatorId( row.getString( "creator_id" ) ).
+//                                    portalContext( row.getString( "portal_context" ) ).
+//                                    status( AppStatus.valueOf( row.getString( "status" ) ) ).
+//                                    build() );
+//
+//            // FIXME: una query con ALLOW FILTERING non è particolarmente efficiente
+//            // in quanto c'è il rischio di qualcosa di simile ad un full table scan
+//            CompletionStage<List<BlockContainerDetail>> blockIds = cassandraSession.
+//                    selectAll( SELECT_BLOCK_CONTAINER, appId ).
+//                    thenApply( rows ->
+//                            rows.stream().map( row -> BlockContainerDetail.builder().
+//                                    blockContainerId( row.getString( "id" ) ).
+//                                    description( row.getString( "description" ) ).
+//                                    build() ).
+//                                    collect( Collectors.toList() )
+//                    );
+//
+//            return detail.thenCombine( blockIds, ( aDetail, bcDetails ) -> {
+//                FullBuilder builder = AppDetails.fullBuilder().appDetails( aDetail );
+//                bcDetails.stream().forEach( det -> builder.add( det ) );
+//                return builder.buildFull();
+//            } );
+//
+//        } );
     }
 
     @Override
@@ -216,13 +216,13 @@ public class PreferencesServiceImpl implements PreferencesService {
     }
 
     @Override
-    public ServiceCall<NotUsed, PSequence<AppDetails>> getAllApps() {
+    public ServiceCall<NotUsed, PSequence<AllApps>> getAllApps() {
         return authorized( USER, request -> {
-            CompletionStage<PSequence<AppDetails>> result =
+            CompletionStage<PSequence<AllApps>> result =
                     cassandraSession.selectAll( SELECT_ALL_APPS ).
                             thenApply( rows -> {
-                                List<AppDetails> details = rows.stream().
-                                        map( row -> AppDetails.builder().
+                                List<AllApps> details = rows.stream().
+                                        map( row -> AllApps.builder().
                                                 appId( row.getString( "id" ) ).
                                                 description( row.getString( "description" ) ).
                                                 creatorId( row.getString( "creator_id" ) ).

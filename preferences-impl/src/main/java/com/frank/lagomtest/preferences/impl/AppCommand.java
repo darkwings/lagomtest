@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.frank.lagomtest.preferences.api.model.App;
 import com.frank.lagomtest.preferences.api.AppStatus;
 import com.frank.lagomtest.preferences.api.model.BlockContainer;
+import com.frank.lagomtest.preferences.api.values.AppDetails;
 import com.lightbend.lagom.javadsl.persistence.PersistentEntity;
 import com.lightbend.lagom.serialization.CompressedJsonable;
 import com.lightbend.lagom.serialization.Jsonable;
+import org.pcollections.PSequence;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
@@ -105,41 +107,43 @@ public interface AppCommand extends Jsonable {
         }
     }
 
+    @SuppressWarnings("serial")
+    @Immutable
+    @JsonDeserialize
+    class GetApp implements AppCommand, CompressedJsonable,
+            PersistentEntity.ReplyType<AppDetails> {
+
+        @JsonCreator
+        private GetApp() {
+        }
+
+        public static GetApp build() {
+            return new GetApp();
+        }
+
+        @Override
+        public boolean equals( @Nullable Object another ) {
+            return this instanceof GetApp;
+        }
+
+        @Override
+        public int hashCode() {
+            return 2053226012;
+        }
+    }
+
 //    @SuppressWarnings("serial")
 //    @Immutable
 //    @JsonDeserialize
-//    class GetApp implements AppCommand, CompressedJsonable,
-//            PersistentEntity.ReplyType<GetAppReply> {
-//
-//        @JsonCreator
-//        private GetApp() {
-//        }
-//
-//        public static GetApp build() {
-//            return new GetApp();
-//        }
-//
-//        @Override
-//        public boolean equals( @Nullable Object another ) {
-//            return this instanceof GetApp;
-//        }
-//
-//        @Override
-//        public int hashCode() {
-//            return 2053226012;
-//        }
-//    }
-//
-//    @SuppressWarnings("serial")
-//    @Immutable
-//    @JsonDeserialize
-//    class GetAppReply implements Jsonable {
+//    class GetAppResponse implements Jsonable {
 //        final Optional<App> app;
 //        final AppStatus status;
+//        final PSequence<BlockContainer> blockContainers;
 //
 //        public static class Builder {
 //            Optional<App> app;
 //            AppStatus status;
+//            PSequence<BlockContainer> blockContainers;
 //
 //            private Builder() {
 //            }
@@ -149,23 +153,33 @@ public interface AppCommand extends Jsonable {
 //                return this;
 //            }
 //
+//            public Builder blockContainers( PSequence<BlockContainer> blockContainers ) {
+//                this.blockContainers = blockContainers;
+//                return this;
+//            }
+//
 //            public Builder status( AppStatus status ) {
 //                this.status = status;
 //                return this;
 //            }
 //
-//            public GetAppReply build() {
-//                return new GetAppReply( app, status );
+//            public GetAppResponse build() {
+//                return new GetAppResponse( app, status, blockContainers );
 //            }
+//        }
+//
+//        private GetAppResponse( Optional<App> app, AppStatus status, PSequence<BlockContainer> blockContainers ) {
+//            this.app = app;
+//            this.status = status;
+//            this.blockContainers = blockContainers;
 //        }
 //
 //        public static Builder builder() {
 //            return new Builder();
 //        }
 //
-//        private GetAppReply( Optional<App> app, AppStatus status ) {
-//            this.app = app;
-//            this.status = status == null ? AppStatus.DRAFT : status;
+//        public PSequence<BlockContainer> getBlockContainers() {
+//            return blockContainers;
 //        }
 //
 //        public Optional<App> getApp() {
@@ -185,7 +199,7 @@ public interface AppCommand extends Jsonable {
 //                return false;
 //            }
 //
-//            GetAppReply reply = (GetAppReply) o;
+//            GetAppResponse reply = (GetAppResponse) o;
 //
 //            if ( app != null ? !app.equals( reply.app ) : reply.app != null ) {
 //                return false;

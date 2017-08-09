@@ -8,17 +8,17 @@ import javax.annotation.concurrent.Immutable;
  * @author ftorriani
  */
 @Immutable
-public final class CreateAppResult {
+public final class CreateAppDone {
 
     private final String appId;
 
     @JsonCreator
-    private CreateAppResult( String appId ) {
+    private CreateAppDone( String appId ) {
         this.appId = appId;
     }
 
-    public static CreateAppResult from( String appId ) {
-        return new CreateAppResult( appId );
+    public static CreateAppDone from( String appId ) {
+        return new CreateAppDone( appId );
     }
 
 
